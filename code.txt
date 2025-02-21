@@ -1,6 +1,12 @@
 # program that fills the entire address space
 # works kinda weird, but it's self-modifying code
 
+# setup screen size
+TO|FE FE
+00 40 00
+
+# main program
+TO|00 00
 # GROUP add 1 to write instruction
 2A 00 04 # ADD instruction
 A0 03 00 # value constant 1

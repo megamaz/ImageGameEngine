@@ -17,9 +17,17 @@ class Environment:
     
     def _initalize_space(self, image:Image.Image):
         print("Initalizing space...")
+        self.reserved_keycodes = {}
         for y in range(image.size[1]):
             for x in range(image.size[0]):
                 self.space[x][y] = image.getpixel((x, y))[:3]
+
+                # reserved keycodes
+                if self.space[x][y][:2] == (0xFF, 0xAE):
+                    print(f"Reserving keycode {self.space[x][y][2]} at ({x}, {y})")
+                    self.reserved_keycodes[self.space[x][y][2]] = (x, y)
+                    self.space[x][y] = (0, 0, 0)
+
     
     def _get_address_offset(self, address, offset):
         orig_address = list(address)
@@ -161,6 +169,11 @@ while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
+        
+        if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
+            if event.key in env.reserved_keycodes.keys():
+                env.set_pixel(env.reserved_keycodes[event.key], (0, 0, 0) if event.type == pygame.KEYUP else (0xFF, 0xFF, 0xFF))
+                print("Reserved keycode event detected")
 
     pygame.display.flip()
     clock.tick(60)

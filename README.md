@@ -119,12 +119,11 @@ Bitwise operations are:
 These are values in memories that are edited by the machine, or change information about the environment.
 
 ## User Input
-The arrow keys are stored in this order:
-- `(0xFC, 0xFD)` Right arrow
-- `(0xFD, 0xFD)` Left arrow
-- `(0xFE, 0xFD)` Up arrow
-- `(0xFF, 0xFD)` Down arrow\
-And are stored in the format `(A, A, A)` with A being `0x00` being False, and A being `0xFF` being True.
+To reserve a specific pixel for user input, your initial image state should contain the following pixel:
+- `(0xFF, 0xAE, 0x??)`\
+Any pixel with this exact value will be detected as a **key listener** and will be updated every frame. The B value will contain the keycode. For getting the keycode hex values, you can use the `get_keycode.py` provided.
+
+Once the program is running, the pixels will change, and will be stored in the format `(A, A, A)`. When A is `0x00` it means the key is up, and `0xFF` means the key is down.
 
 ## Screen position
 The screen position is stored in `(0xFF, 0xFE)`. The pixel is stored in the format `(0x00, X, Y)`, with the point being the top left of the screen.
