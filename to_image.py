@@ -23,6 +23,7 @@ for line in code:
         continue
 
     l = line.split(" #")[0]
+    l = l.rstrip()
     print(l, end=": ")
 
     # variables

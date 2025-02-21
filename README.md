@@ -124,7 +124,12 @@ To reserve a specific pixel for user input, your initial image state should cont
 - `(0xFF, 0xAE, 0x??)`\
 Any pixel with this exact value will be detected as a **key listener** and will be updated every frame. The B value will contain the keycode. For getting the keycode hex values, you can use the `get_keycode.py` provided.
 
-Once the program is running, the pixels will change, and will be stored in the format `(A, A, A)`. When A is `0x00` it means the key is up, and `0xFF` means the key is down.
+To control what value this pixel will change to when the key is released or pressed down, two additional pixels are required for setup:
+- `R_1`, `G_1`, `B_1` are the `0xFF`, `0xAE`, and keycode bytes respectively.
+- `R_2`, `G_2`, `B_2` is the value for when the key is PRESSED.
+- `R_3`, `G_3`, `B_3` is the value for when the key is RELEASED.
+
+These pixels are NOT reset when initalizing the state. The pixel will default to the RELEASED state.
 
 ## Screen position
 The screen position is stored in `(0xFF, 0xFE)`. The pixel is stored in the format `(0x00, X, Y)`, with the point being the top left of the screen.

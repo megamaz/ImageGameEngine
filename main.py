@@ -24,9 +24,14 @@ class Environment:
 
                 # reserved keycodes
                 if self.space[x][y][:2] == (0xFF, 0xAE):
-                    print(f"Reserving keycode {self.space[x][y][2]} at ({x}, {y})")
-                    self.reserved_keycodes[self.space[x][y][2]] = (x, y)
-                    self.space[x][y] = (0, 0, 0)
+                    print(f"Reserving keycode {self.space[x][y][2]} ('{pygame.key.name(self.space[x][y][2])}') at ({x}, {y})")
+                    address = [x, y]
+                    self.reserved_keycodes[self.space[x][y][2]] = {
+                        "address": (x, y),
+                        pygame.KEYDOWN: image.getpixel(tuple(self._get_address_offset(address, 1))),
+                        pygame.KEYUP: image.getpixel(tuple(self._get_address_offset(address, 2)))
+                    }
+                    self.space[x][y] = self.reserved_keycodes[self.space[x][y][2]][pygame.KEYUP]
 
     
     def _get_address_offset(self, address, offset):
@@ -183,13 +188,22 @@ while True:
         
         if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
             if event.key in env.reserved_keycodes.keys():
-                env.set_pixel(env.reserved_keycodes[event.key], (0, 0, 0) if event.type == pygame.KEYUP else (0xFF, 0xFF, 0xFF))
+                env.set_pixel(env.reserved_keycodes[event.key]["address"], env.reserved_keycodes[event.key][event.type])
                 print("Reserved keycode event detected")
     else:
         stop = False
     
     if stop:
         break
+
+    if "stepping" in sys.argv:
+        pygame.event.clear()
+        while True:
+            event = pygame.event.wait()
+            if event.type == pygame.QUIT:
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.key.key_code("]") or event.type == pygame.TEXTINPUT and event.text == ']':
+                break
 
     pygame.display.flip()
     # clock.tick(60)
@@ -403,3 +417,4 @@ state.save("state.png")
 # showpointer - shows pointer
 # forcefull - forces the game to show the full 256x256 area
 # debug - shows debug logs
+# stepping - lets you prace p to step forward one instruction at a time
