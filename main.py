@@ -161,7 +161,7 @@ while True:
         print("Value / variable instruction, ignoring")
 
     elif pixel[0] == 0xBB or "forcefull" in sys.argv: # BLIT
-        if "forcefull" not in sys.argv:
+        if pixel[0] == 0xBB:
             print("Blit instruction ran")
         screen_tleft = env.space[255][254][1:]
         screen_size = env.space[254][254][1]
