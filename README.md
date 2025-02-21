@@ -84,7 +84,7 @@ Afterwards, the instruction will parse the next pixels as either value / variabl
 ### `0x1A`: Equality
 Checks if two values are equal.
 
-### `0x1B`: Less than
+### `0x1B`: Less than [DEFAULT]
 Check if the value in `R_2` is less than (but not equal to) the value in `R_3`
 
 ## `0xBB`: Blit
@@ -104,8 +104,7 @@ This will do arithmetic. The following pixels are treated either as value / vari
 Arithmetic operators are:
 - `0x2A`: Add
 - `0x2B`: Multiply
-- `0x2C`: Euclidean division (divisions by 0 return 0)
-- `0x2D`: 
+- `0x2C`: Euclidean division (divisions by 0 return 0) [DEFAULT]
 
 ## `0x3_`: Bitwise operators
 Works the same as arithmetic operators, but does bitwise operations instead.
@@ -114,7 +113,7 @@ Works the same as arithmetic operators, but does bitwise operations instead.
 Bitwise operations are:
 - `0x3A`: Logical AND
 - `0x3B`: Logical XOR
-- `0x3C`: Logical OR
+- `0x3C`: Logical OR [DEFAULT]
 
 
 # Registers

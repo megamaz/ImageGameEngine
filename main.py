@@ -271,7 +271,8 @@ while True:
                 pointer = list(target_if_false)
             continue
 
-        elif pixel[0] == 0x1B: # LESS THAN
+        # elif pixel[0] == 0x1B: # LESS THAN
+        else:
             if val1 < val2:
                 pointer = list(target_if_true)
             else:
@@ -325,7 +326,8 @@ while True:
         elif pixel[0] == 0x2B:
             result = val1 * val2
 
-        elif pixel[0] == 0x2C:
+        # elif pixel[0] == 0x2C:
+        else:
             if val2 == 0:
                 result = 0
             else:
@@ -353,7 +355,8 @@ while True:
         elif pixel[0] == 0x3B:
             result = val1 ^ val2
         
-        elif pixel[0] == 0x3C:
+        # elif pixel[0] == 0x3C:
+        else:
             result = val1 | val2
         
         b_result = result.to_bytes((len(hex(result)[2:])//2))
