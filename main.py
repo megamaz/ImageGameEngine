@@ -117,6 +117,9 @@ screen = pygame.display.set_mode((256*4, 256*4))
 screen.fill((0, 0, 0))
 clock = pygame.time.Clock()
 
+if "debug" not in sys.argv:
+    print = lambda *x : None
+
 while True:
     # update the display
     # get registers
@@ -210,6 +213,7 @@ while True:
                                                 (screen_tleft[1] - 256)*4,
                                                 screen_size*4, 
                                                 screen_size*4], width=2)
+            
     elif pixel[0] == 0xB0: # WRITE
         target = pixel[1:]
         value = env.get_pixel(pointer, 1)
