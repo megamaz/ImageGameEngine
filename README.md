@@ -87,13 +87,15 @@ Checks if two values are equal.
 ### `0x1B`: Less than
 Check if the value in `R_2` is less than (but not equal to) the value in `R_3`
 
+## `0xBB`: Blit
+Renders the screen.
+
 ## `0xEF`: Branch to
 Jumps instruction to the given address, and appends the address of this instruction to the [branch stack](#branch-stack). Or rather, it searches for the right-most null value, and replaces it with the current address. If the stack is full, the last value in the stack will be overwritten.
 - `G_1`, `B_1`: The address to branch to.
 
 ## `0xEE`: Return
 Returns to the last executed "branch to" instruction. Or rather, it searches for the right-most non-0 pixel in the [branch stack](#branch-stack), and jumps to that address. Also sets the last element in the stack to 0. If the stack is empty, returns to (0, 0).
-
 
 ## `0x2_`: Arithmetic operators
 This will do arithmetic. The following pixels are treated either as value / variable mode pixels, save for the first parameters which are to know where to store the result.
@@ -102,7 +104,7 @@ This will do arithmetic. The following pixels are treated either as value / vari
 Arithmetic operators are:
 - `0x2A`: Add
 - `0x2B`: Multiply
-- `0x2C`: Euclidean division
+- `0x2C`: Euclidean division (divisions by 0 return 0)
 - `0x2D`: 
 
 ## `0x3_`: Bitwise operators

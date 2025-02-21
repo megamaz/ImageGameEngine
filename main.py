@@ -120,53 +120,6 @@ clock = pygame.time.Clock()
 while True:
     # update the display
     # get registers
-    screen_tleft = env.space[255][254][1:]
-    screen_size = env.space[254][254][1]
-    debug_color = (255, 255, 255)
-
-    to_pygame_screen_size = (screen_size*4 + 4, screen_size*4 + 4)
-    if "forcefull" not in sys.argv and screen.get_size() != to_pygame_screen_size:
-        print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
-        screen = pygame.display.set_mode(to_pygame_screen_size)
-
-    if "forcefull" in sys.argv:
-        screen_size = 256
-        screen_tleft = [0, 0]
-
-    for y in range(screen_size+1):
-        for x in range(screen_size+1):
-            x_coord = (x + screen_tleft[0]) % 256
-            y_coord = (y + screen_tleft[1]) % 256
-            screen.fill((env.space[x_coord][y_coord]), [x*4, y*4, 4, 4])
-    
-
-    if "showpointer" in sys.argv:
-        pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]][pointer[1]]]), [
-            ((pointer[0] - screen_tleft[0])%256)*4 + 2,
-            ((pointer[1] - screen_tleft[1])%256)*4 + 2], 6, width=2)
-
-    if "forcefull" in sys.argv:
-        screen_size = env.space[254][254][1]
-        screen_tleft = env.space[255][254][1:]
-        pygame.draw.rect(screen, debug_color, [screen_tleft[0]*4 + 2, 
-                                             screen_tleft[1]*4 + 2,
-                                             screen_size*4, 
-                                             screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4 + 2,
-                                             (screen_tleft[1])*4 + 2,
-                                             screen_size*4, 
-                                             screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0])*4 + 2,
-                                             (screen_tleft[1] - 256)*4 + 2,
-                                             screen_size*4, 
-                                             screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4,
-                                             (screen_tleft[1] - 256)*4,
-                                             screen_size*4, 
-                                             screen_size*4], width=2)
 
     stop = True
     for event in pygame.event.get():
@@ -207,6 +160,56 @@ while True:
 
         print("Value / variable instruction, ignoring")
 
+    elif pixel[0] == 0xBB or "forcefull" in sys.argv: # BLIT
+        if "forcefull" not in sys.argv:
+            print("Blit instruction ran")
+        screen_tleft = env.space[255][254][1:]
+        screen_size = env.space[254][254][1]
+        debug_color = (255, 255, 255)
+
+        to_pygame_screen_size = (screen_size*4 + 4, screen_size*4 + 4)
+        if "forcefull" not in sys.argv and screen.get_size() != to_pygame_screen_size:
+            print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
+            screen = pygame.display.set_mode(to_pygame_screen_size)
+
+        if "forcefull" in sys.argv:
+            screen_size = 256
+            screen_tleft = [0, 0]
+
+        for y in range(screen_size+1):
+            for x in range(screen_size+1):
+                x_coord = (x + screen_tleft[0]) % 256
+                y_coord = (y + screen_tleft[1]) % 256
+                screen.fill((env.space[x_coord][y_coord]), [x*4, y*4, 4, 4])
+        
+
+        if "showpointer" in sys.argv:
+            pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]][pointer[1]]]), [
+                ((pointer[0] - screen_tleft[0])%256)*4 + 2,
+                ((pointer[1] - screen_tleft[1])%256)*4 + 2], 6, width=2)
+
+        if "forcefull" in sys.argv:
+            screen_size = env.space[254][254][1]
+            screen_tleft = env.space[255][254][1:]
+            pygame.draw.rect(screen, debug_color, [screen_tleft[0]*4 + 2, 
+                                                screen_tleft[1]*4 + 2,
+                                                screen_size*4, 
+                                                screen_size*4], width=2)
+            
+            pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4 + 2,
+                                                (screen_tleft[1])*4 + 2,
+                                                screen_size*4, 
+                                                screen_size*4], width=2)
+            
+            pygame.draw.rect(screen, debug_color, [(screen_tleft[0])*4 + 2,
+                                                (screen_tleft[1] - 256)*4 + 2,
+                                                screen_size*4, 
+                                                screen_size*4], width=2)
+            
+            pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4,
+                                                (screen_tleft[1] - 256)*4,
+                                                screen_size*4, 
+                                                screen_size*4], width=2)
     elif pixel[0] == 0xB0: # WRITE
         target = pixel[1:]
         value = env.get_pixel(pointer, 1)
@@ -324,7 +327,7 @@ while True:
 
         elif pixel[0] == 0x2C:
             if val2 == 0:
-                result = 255
+                result = 0
             else:
                 result = val1 // val2
 
