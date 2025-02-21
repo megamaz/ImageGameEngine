@@ -24,7 +24,7 @@ Every pixel is split into their RGB values:
 # Instructions
 The list of instructions. They'll be written in hex (`0x00` to `0xFF`).
 
-Parameters will be written as `R_n`, `G_n`, and `B_n`, where `n` is a number 1 or above that referse to which pixel the Green and Blue values will be read from. `n=1` refers to the same pixel where the instruction was read from, and `n=2` refers to the next pixel (unless stated otherwise). This includes `R_n` because red may sometimes be treated as a parameter.
+Parameters will be written as `R_n`, `G_n`, and `B_n`, where `n` is a number 1 or above that refers to which pixel the Green and Blue values will be read from. `n=1` refers to the same pixel where the instruction was read from, and `n=2` refers to the next pixel (unless stated otherwise). This includes `R_n` because red may sometimes be treated as a parameter.
 
 Pixel indexing is from `0x00` to `0xFF`. (0x00, 0x00) is the top left, and (0xFF, 0xFF) is the bottom right.
 
