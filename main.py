@@ -3,7 +3,7 @@ import pygame
 import sys
 import os
 
-code = Image.open("./code.png")
+code = Image.open("./state.png")
 
 if code.size != (256, 256):
     print("Image size is not correct.")
@@ -281,10 +281,10 @@ while True:
         # append to stack
         for s in range(256):
             if env.space[s][255] == (0, 0, 0):
-                env.set_pixel([s, 255], (0, pointer[0], pointer[1]))
+                env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
                 break
         else:
-            env.set_pixel([s, 255], (0, pointer[0], pointer[1]))
+            env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
 
         pointer = list(target)
         continue

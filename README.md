@@ -132,4 +132,4 @@ The screen position is stored in `(0xFF, 0xFE)`. The pixel is stored in the form
 The screen size is stored in `(0xFE, 0xFE)`, and is stored in the format `(0x00, S, 0x00)`, with S being the square size of the screen. The screen will always be square.
 
 ## Branch Stack
-Has a maximum size of 256, and uses the entire bottom row from `(0x00, 0xFF)` to `(0xFF, 0xFF)`. Each pixel is stored in the format `(0x00, X, Y)`.
+Has a maximum size of 256, and uses the entire bottom row from `(0x00, 0xFF)` to `(0xFF, 0xFF)`. Each pixel is stored in the format `(0x40, X, Y)` as goto instructions.
