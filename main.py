@@ -184,7 +184,7 @@ while True:
 
     # NULL does nothing, no need to check for it
     # OFFSET
-    if pixel[0] & 0xF0 == 0x50:
+    if pixel[0] == 0x50:
         target = env._get_address_offset(pointer, pixel[1])
         print(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
         pointer = target
@@ -199,7 +199,7 @@ while True:
 
         print("Value / variable instruction, ignoring")
 
-    elif pixel[0] & 0xF0 == 0xB0: # WRITE
+    elif pixel[0] == 0xB0: # WRITE
         target = pixel[1:]
         value = env.get_pixel(pointer, 1)
         env.set_pixel(target, value)
@@ -222,7 +222,7 @@ while True:
         print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
         pointer = env._get_address_offset(pointer, 2)
     
-    elif pixel[0] & 0xF0 == 0xD0: # FILL AREA
+    elif pixel[0] == 0xD0: # FILL AREA
         top_left = pixel[1:]
         bottom_right = env.get_pixel(pointer, 1)[1:]
         target = env.get_pixel(pointer, 2)
@@ -281,7 +281,7 @@ while True:
         pointer = list(target)
         continue
 
-    elif pixel[0] & 0xF0 == 0x40: # GOTO
+    elif pixel[0] == 0x40: # GOTO
         target = pixel[1:]
         print(f"Goto instruction, to {target}")
         pointer = target
