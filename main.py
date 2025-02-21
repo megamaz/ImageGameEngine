@@ -141,7 +141,9 @@ while True:
     
 
     if "showpointer" in sys.argv:
-        pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]][pointer[1]]]), [pointer[0]*4 + screen_tleft[0] + 2, pointer[1]*4 + screen_tleft[1] + 2], 6, width=2)
+        pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]][pointer[1]]]), [
+            ((pointer[0] - screen_tleft[0])%256)*4 + 2,
+            ((pointer[1] - screen_tleft[1])%256)*4 + 2], 6, width=2)
 
     if "forcefull" in sys.argv:
         screen_size = env.space[254][254][1]
@@ -166,17 +168,23 @@ while True:
                                              screen_size*4, 
                                              screen_size*4], width=2)
 
+    stop = True
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            quit()
+            break
         
         if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
             if event.key in env.reserved_keycodes.keys():
                 env.set_pixel(env.reserved_keycodes[event.key], (0, 0, 0) if event.type == pygame.KEYUP else (0xFF, 0xFF, 0xFF))
                 print("Reserved keycode event detected")
+    else:
+        stop = False
+    
+    if stop:
+        break
 
     pygame.display.flip()
-    clock.tick(60)
+    # clock.tick(60)
 
     # instructions
     pixel = env.get_pixel(pointer)
@@ -356,6 +364,17 @@ while True:
 
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
+
+# save final state as image
+state = Image.new("RGB", (256, 256))
+for x in range(256):
+    for y in range(256):
+        state.putpixel((x, y), env.get_pixel([x, y]))
+
+# to load, put a goto instruction as the first pixel
+state.putpixel((0, 0), (0x40, pointer[0], pointer[1]))
+
+state.save("state.png")
 
 # ARGUMENTS
 # showpointer - shows pointer
