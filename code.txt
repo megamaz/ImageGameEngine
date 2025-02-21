@@ -1,1 +1,11 @@
-# program that fills the entire address space with itself
+# program that fills the entire address space
+# works kinda weird, but it's self-modifying code
+
+# GROUP add 1 to write instruction
+2A 00 04 # ADD instruction
+A0 03 00 # value constant 1
+00 00 01
+A0 03 00 # value constant that's being written to by the ADD instruction
+B0 00 08 # the WRITE instruction, first treated as a value, then ran
+40 00 04 # the arithmetic instruction skips to here and executes this as code, sending us to the WRITE instruction
+40 00 00 # after the WRITE instruction we jump here, which sends us back to the ADD instruction

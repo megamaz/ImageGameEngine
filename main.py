@@ -3,7 +3,7 @@ import pygame
 import sys
 import os
 
-code = Image.open("./out.png")
+code = Image.open("./code.png")
 
 if code.size != (256, 256):
     print("Image size is not correct.")
@@ -133,7 +133,7 @@ while True:
     
 
     if "showpointer" in sys.argv:
-        pygame.draw.circle(screen, debug_color, [pointer[0]*4 + screen_tleft[0] + 2, pointer[1]*4 + screen_tleft[1] + 2], 4, width=2)
+        pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]][pointer[1]]]), [pointer[0]*4 + screen_tleft[0] + 2, pointer[1]*4 + screen_tleft[1] + 2], 6, width=2)
 
     if "forcefull" in sys.argv:
         screen_size = env.space[254][254][1]
@@ -313,7 +313,7 @@ while True:
             env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
         
         pointer = env._get_address_offset(pointer, offset)
-        print(f"Arithmetic instruction -> {val1} and {val2} result {result} stored at {target}")
+        print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
         continue
 
     elif pixel[0] & 0xF0 == 0x30: # BITWISE
@@ -332,13 +332,13 @@ while True:
         elif pixel[0] == 0x3C:
             result = val1 | val2
         
-        print(f"Bitwise instruction -> {val1} and {val2} result {result} stored at {target}")
         b_result = result.to_bytes((len(hex(result)[2:])//2))
         b_result += b'\x00\x00\x00' # padding
         for b in range(0, len(b_result)-3, 3):
             env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
         
         pointer = env._get_address_offset(pointer, offset)
+        print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
         continue
 
     # increment pointer

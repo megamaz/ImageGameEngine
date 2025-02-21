@@ -11,7 +11,7 @@ The image that gets rendered to the screen will depend on the registers set by t
 The image that gets loaded and ran is the *initial state* of the environment.
 
 ## How to code
-*Actually <u>writing</u> the code will be up to the writer. There is no IDE. This project is solely an interpreter.*
+For actually writing the code, there is a basic `to_image.py` that convers some basic instructions into the image. There is a small amount of documentation telling you exactly how that wokrs inside the comments of the file near the top.
 
 A reader pointed will scroll through the image, top to bottom, left to right. It starts in the top left. 
 
