@@ -3,7 +3,7 @@ import pygame
 import sys
 import os
 
-code = Image.open("./state.png")
+code = Image.open("./code.png")
 
 if code.size != (256, 256):
     print("Image size is not correct.")
