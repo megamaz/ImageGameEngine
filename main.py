@@ -394,3 +394,4 @@ state.save("state.png")
 # ARGUMENTS
 # showpointer - shows pointer
 # forcefull - forces the game to show the full 256x256 area
+# debug - shows debug logs
