@@ -84,7 +84,7 @@ Afterwards, the instruction will parse the next pixels as either value / variabl
 ### `0x1A`: Equality
 Checks if two values are equal.
 
-### `0x1B`: Less than [DEFAULT]
+### `0x1B`: Less than
 Check if the value in `R_2` is less than (but not equal to) the value in `R_3`
 
 ## `0xBB`: Blit

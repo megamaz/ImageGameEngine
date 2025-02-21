@@ -271,8 +271,7 @@ while True:
                 pointer = list(target_if_false)
             continue
 
-        # elif pixel[0] == 0x1B: # LESS THAN
-        else:
+        elif pixel[0] == 0x1B: # LESS THAN
             if val1 < val2:
                 pointer = list(target_if_true)
             else:
@@ -333,7 +332,10 @@ while True:
             else:
                 result = val1 // val2
 
-        b_result = result.to_bytes((len(hex(result)[2:])//2))
+        try:
+            b_result = result.to_bytes((len(hex(result)[2:])//2))
+        except OverflowError:
+            b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
         b_result += b'\x00\x00\x00' # padding
         for b in range(0, len(b_result)-3, 3):
             env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
@@ -359,7 +361,10 @@ while True:
         else:
             result = val1 | val2
         
-        b_result = result.to_bytes((len(hex(result)[2:])//2))
+        try:
+            b_result = result.to_bytes((len(hex(result)[2:])//2))
+        except OverflowError:
+            b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
         b_result += b'\x00\x00\x00' # padding
         for b in range(0, len(b_result)-3, 3):
             env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
