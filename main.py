@@ -171,16 +171,19 @@ def blit(rects:list=[]):
     render = pygame.Surface((256, 256))
     pygame.surfarray.blit_array(render, env.space)
     scaled_render = pygame.transform.scale(render, (1024, 1024))
-    screen.blit(scaled_render, tuple([
-        screen_tleft[0]-1024, screen_tleft[1]-1024
-    ]))
-    screen.blit(scaled_render, tuple([
-        screen_tleft[0], screen_tleft[1]-1024
-    ]))
-    screen.blit(scaled_render, tuple([
-        screen_tleft[0]-1024, screen_tleft[1]
-    ]))
-    screen.blit(scaled_render, tuple(screen_tleft))
+    if not forcefull:
+        screen.blit(scaled_render, tuple([
+            screen_tleft[0]-1024, screen_tleft[1]-1024
+        ]))
+        screen.blit(scaled_render, tuple([
+            screen_tleft[0], screen_tleft[1]-1024
+        ]))
+        screen.blit(scaled_render, tuple([
+            screen_tleft[0]-1024, screen_tleft[1]
+        ]))
+        screen.blit(scaled_render, tuple(screen_tleft))
+    else:
+        screen.blit(scaled_render, (0, 0))
 
     if showpointer:
         pygame.draw.circle(screen, tuple([255 - x for x in list(env.space[pointer[0]%256][pointer[1]%256])]), [
