@@ -1,19 +1,14 @@
 # program that fills the entire address space
 # works kinda weird, but it's self-modifying code
 
-# setup screen size
-TO|FE FE
-00 40 00
+# program that fills the entire address space
+# works kinda weird, but it's self-modifying code
 
-# test out keycode setups
-TO|05 05
-50 03 00
-FF AE 61 # initalize keycode 61 (a)
-40 FF FF # color on press
-00 00 00 # color on release
-
-# setup main loop
-TO|00 00
-PASS
-BB 00 00 # blit
-40 00 00 # loop
+# GROUP add 1 to write instruction
+2A 00 04 # ADD instruction
+A0 03 00 # value constant 1
+00 00 01
+A0 03 00 # value constant that's being written to by the ADD instruction
+B0 00 08 # the WRITE instruction, first treated as a value, then ran
+40 00 04 # the arithmetic instruction skips to here and executes this as code, sending us to the WRITE instruction
+40 00 00 # after the WRITE instruction we jump here, which sends us back to the ADD instruction

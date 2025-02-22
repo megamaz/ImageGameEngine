@@ -16,6 +16,9 @@ forcefull = "forcefull" in sys.argv
 debug = "debug" in sys.argv
 showpointer = "showpointer" in sys.argv
 stepping = "stepping" in sys.argv
+speed = None
+if "speed" in sys.argv:
+    speed = int(sys.argv[sys.argv.index("speed")+1])
 
 class Environment:
     def __init__(self):
@@ -178,14 +181,6 @@ def blit():
     scaled_render = pygame.transform.scale(render, (1024, 1024))
     screen.blit(scaled_render, (0, 0))
 
-    # for y in range(screen_size+1):
-    #     for x in range(screen_size+1):
-    #         x_coord = (x + screen_tleft[0]) % 256
-    #         y_coord = (y + screen_tleft[1]) % 256
-    #         screen.fill((env.space[x_coord][y_coord]), [x*4, y*4, 4, 4])
-            
-    
-
     if showpointer:
         pygame.draw.circle(screen, tuple([255 - x for x in list(env.space[pointer[0]%256][pointer[1]%256])]), [
             ((pointer[0] - screen_tleft[0])%256)*4 + 2,
@@ -226,7 +221,8 @@ while True:
                 break
 
     pygame.display.flip()
-    # clock.tick(60)
+    if speed is not None:
+        clock.tick(speed)
 
     # instructions
     pointer = list(pointer)
@@ -386,7 +382,7 @@ while True:
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
             b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result)-3, 3):
+            for b in range(0, len(b_result)-2, 3):
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset)
@@ -415,7 +411,7 @@ while True:
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
             b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result)-3, 3):
+            for b in range(0, len(b_result)-2, 3):
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset)
@@ -444,3 +440,4 @@ state.save("state.png")
 # forcefull - forces the game to show the full 256x256 area
 # debug - shows debug logs
 # stepping - lets you prace p to step forward one instruction at a time
+# speed [x] - runs the program at [x] instructions per second
