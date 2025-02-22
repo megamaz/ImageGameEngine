@@ -218,186 +218,189 @@ while True:
     if "forcefull" in sys.argv:
         blit()
 
-    if pixel[0] == 0x50:
-        target = env._get_address_offset(pointer, pixel[1])
-        print(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
-        pointer = target
-    
-    # VALUE / VARIABLE mode: we need to skip forward accordingly
-    elif pixel[0] & 0xF0 == 0xA0:
-        if pixel[0] & 0x01 == 0x00: # VALUE mode
-            pointer[1] += pixel[1]
+    match pixel[0]:
+
+        case 0x50: # OFFSET
+            target = env._get_address_offset(pointer, pixel[1])
+            print(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
+            pointer = target
+            continue
         
-        elif pixel[0] & 0x01 == 0x01: # VARIABLE mode
-            pointer[1] += 1
-
-        print("Value / variable instruction, ignoring")
-
-    elif pixel[0] == 0xBB: # BLIT
-        blit()
+        # VALUE / VARIABLE mode: we need to skip forward accordingly
+        case 0xA0 | 0xA1:
+            if pixel[0] & 0x01 == 0x00: # VALUE mode
+                pointer[1] += pixel[1]
             
-    elif pixel[0] == 0xB0: # WRITE
-        target = pixel[1:]
-        value = env.get_pixel(pointer, 1)
-        env.set_pixel(target, value)
-        pointer = env._get_address_offset(pointer, 1)        
-        print(f"Write instruction, wrote {value} at {target}")
+            elif pixel[0] & 0x01 == 0x01: # VARIABLE mode
+                pointer[1] += 1
+
+            print("Value / variable instruction, ignoring")
+
+        case 0xBB: # BLIT
+            blit()
+                
+        case 0xB0: # WRITE
+            target = pixel[1:]
+            value = env.get_pixel(pointer, 1)
+            env.set_pixel(target, value)
+            pointer = env._get_address_offset(pointer, 1)        
+            print(f"Write instruction, wrote {value} at {target}")
+            
+
+        case 0xC0: # COPY AREA
+            top_left = pixel[1:]
+            bottom_right = env.get_pixel(pointer, 1)[1:]
+            target = env.get_pixel(pointer, 2)[1:]
+
+            for x in range(top_left[0], bottom_right[0]):
+                for y in range(top_left[1], bottom_right[1]):
+                    env.set_pixel(
+                        (x - top_left[0] + target[0], y - top_left[1] + target[0]),
+                        env.get_pixel((x - top_left[0], y - top_left[1]))
+                    )
         
+            print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
+            pointer = env._get_address_offset(pointer, 2)
+        
+        case 0xD0: # FILL AREA
+            top_left = pixel[1:]
+            bottom_right = env.get_pixel(pointer, 1)[1:]
+            target = env.get_pixel(pointer, 2)
 
-    elif pixel[0] == 0xC0: # COPY AREA
-        top_left = pixel[1:]
-        bottom_right = env.get_pixel(pointer, 1)[1:]
-        target = env.get_pixel(pointer, 2)[1:]
+            for x in range(top_left[0], bottom_right[0]):
+                for y in range(top_left[1], bottom_right[1]):
+                    env.set_pixel(
+                        (x - top_left[0] + target[0], y - top_left[1] + target[0]),
+                        target
+                    )
+        
+            print(f"Fill area instruction, copied from {top_left} to {bottom_right} with {target}")
+            pointer = env._get_address_offset(pointer, 2)
+        
+        case 0xCA:
+            source = pixel[1:]
+            target = env.get_pixel(pointer, 1)[1:]
 
-        for x in range(top_left[0], bottom_right[0]):
-            for y in range(top_left[1], bottom_right[1]):
-                env.set_pixel(
-                    (x - top_left[0] + target[0], y - top_left[1] + target[0]),
-                    env.get_pixel((x - top_left[0], y - top_left[1]))
-                )
-    
-        print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
-        pointer = env._get_address_offset(pointer, 2)
-    
-    elif pixel[0] == 0xD0: # FILL AREA
-        top_left = pixel[1:]
-        bottom_right = env.get_pixel(pointer, 1)[1:]
-        target = env.get_pixel(pointer, 2)
+            print(f"Copy instruction, copied {source} at {target}")
+            env.set_pixel(target, env.get_pixel(source))
 
-        for x in range(top_left[0], bottom_right[0]):
-            for y in range(top_left[1], bottom_right[1]):
-                env.set_pixel(
-                    (x - top_left[0] + target[0], y - top_left[1] + target[0]),
-                    target
-                )
-    
-        print(f"Fill area instruction, copied from {top_left} to {bottom_right} with {target}")
-        pointer = env._get_address_offset(pointer, 2)
-    
-    elif pixel[0] == 0xCA:
-        source = pixel[1:]
-        target = env.get_pixel(pointer, 1)[1:]
+        case 0x1A | 0x1B: # IF
+            target_if_false = pixel[1:]
+            target_if_true = env.get_pixel(pointer, 1)[1:]
+            pointer = env._get_address_offset(pointer, 2)
 
-        print(f"Copy instruction, copied {source} at {target}")
-        env.set_pixel(target, env.get_pixel(source))
+            val1, val2, _ = env.get_double_val(pointer)
 
-    elif pixel[0] & 0xF0 == 0x10: # IF
-        target_if_false = pixel[1:]
-        target_if_true = env.get_pixel(pointer, 1)[1:]
-        pointer = env._get_address_offset(pointer, 2)
+            print(f"If instruction, mode {pixel[0]} on {val1} and {val2}")
+            # different operators
+            if pixel[0] == 0x1A: # EQUAL
+                if val1 == val2:
+                    pointer = list(target_if_true)
+                else:
+                    pointer = list(target_if_false)
+                continue
 
-        val1, val2, _ = env.get_double_val(pointer)
-
-        print(f"If instruction, mode {pixel[0]} on {val1} and {val2}")
-        # different operators
-        if pixel[0] == 0x1A: # EQUAL
-            if val1 == val2:
-                pointer = list(target_if_true)
+            elif pixel[0] == 0x1B: # LESS THAN
+                if val1 < val2:
+                    pointer = list(target_if_true)
+                else:
+                    pointer = list(target_if_false)
+                continue
+        
+        case 0xEF: # BRANCH
+            target = pixel[1:]
+            print(f"Branch instruction, to {target}")
+            # append to stack
+            for s in range(256):
+                if env.space[s][255] == (0, 0, 0):
+                    env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
+                    break
             else:
-                pointer = list(target_if_false)
-            continue
-
-        elif pixel[0] == 0x1B: # LESS THAN
-            if val1 < val2:
-                pointer = list(target_if_true)
-            else:
-                pointer = list(target_if_false)
-            continue
-    
-    elif pixel[0] == 0xEF: # BRANCH
-        target = pixel[1:]
-        print(f"Branch instruction, to {target}")
-        # append to stack
-        for s in range(256):
-            if env.space[s][255] == (0, 0, 0):
                 env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
-                break
-        else:
-            env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
 
-        pointer = list(target)
-        continue
+            pointer = list(target)
+            continue
 
-    elif pixel[0] == 0x40: # GOTO
-        target = pixel[1:]
-        print(f"Goto instruction, to {target}")
-        pointer = target
-        continue
+        case 0x40: # GOTO
+            target = pixel[1:]
+            print(f"Goto instruction, to {target}")
+            pointer = target
+            continue
 
-    elif pixel[0] == 0xEE: # RETURN
-        # find where to return to
-        for s in range(256):
-            stack_val = env.space[255-s][255]
-            if stack_val != (0, 0, 0):
-                target = stack_val[1:]
-                env.set_pixel([255-s, 255], (0, 0, 0)) 
-                pointer = list(target)
-                break
-        else:
-            pointer = [0, 0]
-        
-        print(f"Return instruction, returned pointed to {pointer}")
-        pointer = env._get_address_offset(pointer, 1)
-        continue
-
-    elif pixel[0] & 0xF0 == 0x20: # ARITHMETIC
-        target = pixel[1:]
-        pointer = env._get_address_offset(pointer, 1)
-        val1, val2, offset = env.get_double_val(pointer)
-        result = 0
-        if pixel[0] == 0x2A:
-            result = val1 + val2
-        
-        elif pixel[0] == 0x2B:
-            result = val1 * val2
-
-        # elif pixel[0] == 0x2C:
-        else:
-            if val2 == 0:
-                result = 0
+        case 0xEE: # RETURN
+            # find where to return to
+            for s in range(256):
+                stack_val = env.space[255-s][255]
+                if stack_val != (0, 0, 0):
+                    target = stack_val[1:]
+                    env.set_pixel([255-s, 255], (0, 0, 0)) 
+                    pointer = list(target)
+                    break
             else:
-                result = val1 // val2
+                pointer = [0, 0]
+            
+            print(f"Return instruction, returned pointed to {pointer}")
+            pointer = env._get_address_offset(pointer, 1)
+            continue
 
-        try:
-            b_result = result.to_bytes((len(hex(result)[2:])//2))
-        except OverflowError:
-            b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-        b_result += b'\x00\x00\x00' # padding
-        for b in range(0, len(b_result)-3, 3):
-            env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
-        
-        pointer = env._get_address_offset(pointer, offset)
-        print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-        continue
+        case 0x2A | 0x2B | 0x2C: # ARITHMETIC
+            target = pixel[1:]
+            pointer = env._get_address_offset(pointer, 1)
+            val1, val2, offset = env.get_double_val(pointer)
+            result = 0
+            if pixel[0] == 0x2A:
+                result = val1 + val2
+            
+            elif pixel[0] == 0x2B:
+                result = val1 * val2
 
-    elif pixel[0] & 0xF0 == 0x30: # BITWISE
-        target = pixel[1:]
-        padding, horiz_offfset = env.get_pixel(pointer, 1)[1:]
-        pointer = env._get_address_offset(pointer, 2)
-        val1, val2, offset = env.get_double_val(pointer)
-        result = 0
+            # elif pixel[0] == 0x2C:
+            else:
+                if val2 == 0:
+                    result = 0
+                else:
+                    result = val1 // val2
 
-        if pixel[0] == 0x3A:
-            result = val1 & val2
-        
-        elif pixel[0] == 0x3B:
-            result = val1 ^ val2
-        
-        # elif pixel[0] == 0x3C:
-        else:
-            result = val1 | val2
-        
-        try:
-            b_result = result.to_bytes((len(hex(result)[2:])//2))
-        except OverflowError:
-            b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-        b_result += b'\x00\x00\x00' # padding
-        for b in range(0, len(b_result)-3, 3):
-            env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
-        
-        pointer = env._get_address_offset(pointer, offset)
-        print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-        continue
+            try:
+                b_result = result.to_bytes((len(hex(result)[2:])//2))
+            except OverflowError:
+                b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
+            b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result)-3, 3):
+                env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
+            
+            pointer = env._get_address_offset(pointer, offset)
+            print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
+            continue
+
+        case 0x3A | 0x3B | 0x3C: # BITWISE
+            target = pixel[1:]
+            padding, horiz_offfset = env.get_pixel(pointer, 1)[1:]
+            pointer = env._get_address_offset(pointer, 2)
+            val1, val2, offset = env.get_double_val(pointer)
+            result = 0
+
+            if pixel[0] == 0x3A:
+                result = val1 & val2
+            
+            elif pixel[0] == 0x3B:
+                result = val1 ^ val2
+            
+            # elif pixel[0] == 0x3C:
+            else:
+                result = val1 | val2
+            
+            try:
+                b_result = result.to_bytes((len(hex(result)[2:])//2))
+            except OverflowError:
+                b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
+            b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result)-3, 3):
+                env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
+            
+            pointer = env._get_address_offset(pointer, offset)
+            print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
+            continue
 
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
