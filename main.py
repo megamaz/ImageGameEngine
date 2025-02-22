@@ -55,7 +55,7 @@ class Environment:
         orig_address = self._get_address_offset(address, offset)
         pixel = self.space[orig_address[0]][orig_address[1]] 
         # print(f"fetched pixel at {orig_address}. pixel={pixel} As instruction: {hex(pixel[0])[2:]}")
-        return pixel
+        return pixel.copy()
     
     def set_pixel(self, address:list, value:tuple):
         # some pieces of my code don't conver oob addresses, so I have to do this here
@@ -125,41 +125,33 @@ class Environment:
         
         return (val1, val2, offset_total)
 
-env = Environment()
-env._initalize_space(code)
-
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50,50)
-pygame.init()
-screen = pygame.display.set_mode((256*4, 256*4))
-screen.fill((0, 0, 0))
-clock = pygame.time.Clock()
-
-if not debug:
-    print = lambda *x : None
-
 def draw_bleeding_rect(tleft, size, debug_color=(255, 255, 255)):
     "size is [w, h]"
-    pygame.draw.rect(screen, debug_color, [tleft[0]*4 + 2, 
-                                    tleft[1]*4 + 2,
-                                    size[0]*4, 
-                                    size[1]*4], width=2)
-    
-    pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4 + 2,
-                                        (tleft[1])*4 + 2,
+    width = 4
+    def do():
+        pygame.draw.rect(screen, debug_color, [tleft[0]*4 + 2, 
+                                        tleft[1]*4 + 2,
                                         size[0]*4, 
-                                        size[1]*4], width=2)
-    
-    pygame.draw.rect(screen, debug_color, [(tleft[0])*4 + 2,
-                                        (tleft[1] - 256)*4 + 2,
-                                        size[0]*4, 
-                                        size[1]*4], width=2)
-    
-    pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4,
-                                        (tleft[1] - 256)*4,
-                                        size[0]*4, 
-                                        size[1]*4], width=2)
+                                        size[1]*4], width=width)
+        
+        pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4 + 2,
+                                            (tleft[1])*4 + 2,
+                                            size[0]*4, 
+                                            size[1]*4], width=width)
+        
+        pygame.draw.rect(screen, debug_color, [(tleft[0])*4 + 2,
+                                            (tleft[1] - 256)*4 + 2,
+                                            size[0]*4, 
+                                            size[1]*4], width=width)
+        
+        pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4,
+                                            (tleft[1] - 256)*4,
+                                            size[0]*4, 
+                                            size[1]*4], width=width)
 
-def blit():
+    return do
+
+def blit(rects:list=[]):
     global screen
     if pixel[0] == 0xBB:
         print("Blit instruction ran")
@@ -189,58 +181,42 @@ def blit():
     if forcefull:
         screen_size = env.space[254][254][1]
         screen_tleft = env.space[255][254][1:]
-        draw_bleeding_rect(screen_tleft, [screen_size, screen_size])
+        draw_bleeding_rect(screen_tleft, [screen_size, screen_size])()
+    
+    for r in rects:
+        r()
 
+pixel = [0, 0, 0]
+pointer = [0, 0]
+
+env = Environment()
+env._initalize_space(code)
+
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50,50)
+pygame.init()
+screen = pygame.display.set_mode((256*4, 256*4))
+screen.fill((0, 0, 0))
+clock = pygame.time.Clock()
+
+if not debug:
+    print = lambda *x : None
+
+blit()
+pygame.display.flip()
 
 while True:
-    # update the display
-    # get registers
-
-    stop = True
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            break
-        
-        if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
-            if event.key in env.reserved_keycodes.keys():
-                env.set_pixel(env.reserved_keycodes[event.key]["address"], env.reserved_keycodes[event.key][event.type])
-                print("Reserved keycode event detected")
-    else:
-        stop = False
-    
-    if stop:
-        break
-
-    if stepping:
-        pygame.event.clear()
-        while True:
-            event = pygame.event.wait()
-            if event.type == pygame.QUIT:
-                sys.exit()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.key.key_code("]") or event.type == pygame.TEXTINPUT and event.text == ']':
-                break
-
-    pygame.display.flip()
-    if speed is not None:
-        clock.tick(speed)
-
-    # instructions
     pointer = list(pointer)
     pixel = env.get_pixel(pointer)
-
-    # NULL does nothing, no need to check for it
-    # OFFSET
-
-    if forcefull:
-        blit()
-
+    rects = []
+    
+    # instructions
     match pixel[0]:
 
         case 0x50: # OFFSET
             target = env._get_address_offset(pointer, pixel[1])
             print(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
-            pointer = target
-            continue
+            pointer = env._get_address_offset(target, -1)
+            # continue
         
         # VALUE / VARIABLE mode: we need to skip forward accordingly
         case 0xA0 | 0xA1:
@@ -253,7 +229,8 @@ while True:
             print("Value / variable instruction, ignoring")
 
         case 0xBB: # BLIT
-            blit()
+            if not forcefull: #forcefull is already rendering every frame, so this wastes time otherwise
+                blit()
                 
         case 0xB0: # WRITE
             target = pixel[1:]
@@ -268,30 +245,52 @@ while True:
             bottom_right = env.get_pixel(pointer, 1)[1:]
             target = env.get_pixel(pointer, 2)[1:]
 
-            for x in range(top_left[0] - (256 if top_left[0] > bottom_right[0] else 0), bottom_right[0]):
-                for y in range(top_left[1] - (256 if top_left[1] > bottom_right[1] else 0), bottom_right[1]):
-                    env.set_pixel(
-                        (x - top_left[0] + target[0], y - top_left[1] + target[1]),
-                        env.get_pixel((x - top_left[0], y - top_left[1]))
-                    )
-        
+            vert_offset = (256 if top_left[1] > bottom_right[1] else 0)
+            horiz_offfset = (256 if top_left[0] > bottom_right[0] else 0)
+
+            if showpointer and forcefull:
+                # source rect
+                rects.append(draw_bleeding_rect(top_left, [
+                    (bottom_right[0] + horiz_offfset) - top_left[0],
+                    (bottom_right[1] + vert_offset) - top_left[1],
+                ], (0, 255, 0)))
+                # target rect
+                rects.append(draw_bleeding_rect(target, [
+                    (bottom_right[0] + horiz_offfset) - top_left[0],
+                    (bottom_right[1] + vert_offset) - top_left[1],
+                ], (255, 0, 0)))
+
             print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
             pointer = env._get_address_offset(pointer, 2)
+            
+            for y in range(bottom_right[1] + vert_offset - top_left[1]):
+                for x in range(bottom_right[0] + horiz_offfset - top_left[0]):
+                    fetch_val = env.get_pixel([(x + top_left[0])%256, (y + top_left[1])%256])
+                    env.set_pixel([(x+target[0])%256, (y+target[1])%256], fetch_val)
+        
         
         case 0xD0: # FILL AREA
             top_left = pixel[1:]
             bottom_right = env.get_pixel(pointer, 1)[1:]
             target = env.get_pixel(pointer, 2)
 
-            for x in range(top_left[0] - (256 if top_left[0] > bottom_right[0] else 0), bottom_right[0]):
-                for y in range(top_left[1] - (256 if top_left[1] > bottom_right[1] else 0), bottom_right[1]):
+            vert_offset = (256 if top_left[1] > bottom_right[1] else 0)
+            horiz_offfset = (256 if top_left[0] > bottom_right[0] else 0)
+
+            for y in range(bottom_right[1] + vert_offset - top_left[1]):
+                for x in range(bottom_right[0] + horiz_offfset - top_left[0]):
                     env.set_pixel(
-                        (x - top_left[0], y - top_left[1]),
+                        [(x+top_left[0])%256, (y+top_left[1])%256],
                         target
                     )
         
             print(f"Fill area instruction, filled {top_left} to {bottom_right} with {target}")
             pointer = env._get_address_offset(pointer, 2)
+            if showpointer and forcefull:
+                rects.append(draw_bleeding_rect(top_left, [
+                    (bottom_right[0] + 256 if top_left[0] > bottom_right[0] else bottom_right[0]) - top_left[0],
+                    (bottom_right[1] + 256 if top_left[1] > bottom_right[1] else bottom_right[1]) - top_left[1],
+                ], (0, 0, 0)))
         
         case 0xCA:
             source = pixel[1:]
@@ -314,14 +313,16 @@ while True:
                     pointer = list(target_if_true)
                 else:
                     pointer = list(target_if_false)
-                continue
+                # continue
 
             elif pixel[0] == 0x1B: # LESS THAN
                 if val1 < val2:
                     pointer = list(target_if_true)
                 else:
                     pointer = list(target_if_false)
-                continue
+                # continue
+            
+            pointer = env._get_address_offset(pointer, -1)
         
         case 0xEF: # BRANCH
             target = pixel[1:]
@@ -335,13 +336,14 @@ while True:
                 env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
 
             pointer = list(target)
-            continue
+            pointer = env._get_address_offset(pointer, -1)
+            # continue
 
         case 0x40: # GOTO
             target = pixel[1:]
             print(f"Goto instruction, to {target}")
-            pointer = target
-            continue
+            pointer = env._get_address_offset(target, -1)
+            # continue
 
         case 0xEE: # RETURN
             # find where to return to
@@ -356,8 +358,8 @@ while True:
                 pointer = [0, 0]
             
             print(f"Return instruction, returned pointed to {pointer}")
-            pointer = env._get_address_offset(pointer, 1)
-            continue
+            # pointer = env._get_address_offset(pointer, 1)
+            # continue
 
         case 0x2A | 0x2B | 0x2C: # ARITHMETIC
             target = pixel[1:]
@@ -385,9 +387,10 @@ while True:
             for b in range(0, len(b_result)-2, 3):
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
-            pointer = env._get_address_offset(pointer, offset)
+            pointer = env._get_address_offset(pointer, offset-1)
             print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-            continue
+            rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3+3], (0, 0, 0)))
+            # continue
 
         case 0x3A | 0x3B | 0x3C: # BITWISE
             target = pixel[1:]
@@ -414,13 +417,47 @@ while True:
             for b in range(0, len(b_result)-2, 3):
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
-            pointer = env._get_address_offset(pointer, offset)
+            pointer = env._get_address_offset(pointer, offset-1)
             print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-            continue
+            rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3 + 3], (0, 0, 0)))
+            # continue
             
         case _:
             print("Unrecognized opcode")
 
+    # control stuff
+    if speed is not None:
+        clock.tick(speed)
+
+    if forcefull:
+        blit(rects)
+
+    pygame.display.flip()
+
+    stop = True
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            break
+        
+        if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
+            if event.key in env.reserved_keycodes.keys():
+                env.set_pixel(env.reserved_keycodes[event.key]["address"], env.reserved_keycodes[event.key][event.type])
+                print("Reserved keycode event detected")
+    else:
+        stop = False
+    
+    if stop:
+        break
+
+    if stepping:
+        pygame.event.clear()
+        while True:
+            event = pygame.event.wait()
+            if event.type == pygame.QUIT:
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.key.key_code("]") or event.type == pygame.TEXTINPUT and event.text == ']':
+                break
+    
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
 
