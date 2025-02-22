@@ -2,6 +2,7 @@ from PIL import Image
 import pygame
 import sys
 import os
+import numpy as np
 
 code = Image.open("./code.png")
 
@@ -11,9 +12,16 @@ if code.size != (256, 256):
 
 pointer = [0, 0]
 
+forcefull = "forcefull" in sys.argv
+debug = "debug" in sys.argv
+showpointer = "showpointer" in sys.argv
+stepping = "stepping" in sys.argv
+
 class Environment:
     def __init__(self):
-        self.space = [[(0, 0, 0),]*256 for _ in range(256)]
+        # using uint8 would be more optimal, but to prevent overflow / underflow issues, using a signed int16
+        # just makes my life easier in the long run.
+        self.space = np.zeros(shape=(256, 256, 3), dtype=np.int16)
     
     def _initalize_space(self, image:Image.Image):
         print("Initalizing space...")
@@ -23,7 +31,7 @@ class Environment:
                 self.space[x][y] = image.getpixel((x, y))[:3]
 
                 # reserved keycodes
-                if self.space[x][y][:2] == (0xFF, 0xAE):
+                if np.array_equal(self.space[x][y][:2], (0xFF, 0xAE)):
                     print(f"Reserving keycode {self.space[x][y][2]} ('{pygame.key.name(self.space[x][y][2])}') at ({x}, {y})")
                     address = [x, y]
                     self.reserved_keycodes[self.space[x][y][2]] = {
@@ -47,6 +55,7 @@ class Environment:
         return pixel
     
     def set_pixel(self, address:list, value:tuple):
+        # some pieces of my code don't conver oob addresses, so I have to do this here
         orig_address = self._get_address_offset(address, 0)
         self.space[orig_address[0]][orig_address[1]] = value
     
@@ -122,8 +131,30 @@ screen = pygame.display.set_mode((256*4, 256*4))
 screen.fill((0, 0, 0))
 clock = pygame.time.Clock()
 
-if "debug" not in sys.argv:
+if not debug:
     print = lambda *x : None
+
+def draw_bleeding_rect(tleft, size, debug_color=(255, 255, 255)):
+    "size is [w, h]"
+    pygame.draw.rect(screen, debug_color, [tleft[0]*4 + 2, 
+                                    tleft[1]*4 + 2,
+                                    size[0]*4, 
+                                    size[1]*4], width=2)
+    
+    pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4 + 2,
+                                        (tleft[1])*4 + 2,
+                                        size[0]*4, 
+                                        size[1]*4], width=2)
+    
+    pygame.draw.rect(screen, debug_color, [(tleft[0])*4 + 2,
+                                        (tleft[1] - 256)*4 + 2,
+                                        size[0]*4, 
+                                        size[1]*4], width=2)
+    
+    pygame.draw.rect(screen, debug_color, [(tleft[0] - 256)*4,
+                                        (tleft[1] - 256)*4,
+                                        size[0]*4, 
+                                        size[1]*4], width=2)
 
 def blit():
     global screen
@@ -131,51 +162,40 @@ def blit():
         print("Blit instruction ran")
     screen_tleft = env.space[255][254][1:]
     screen_size = env.space[254][254][1]
-    debug_color = (255, 255, 255)
 
     to_pygame_screen_size = (screen_size*4 + 4, screen_size*4 + 4)
-    if "forcefull" not in sys.argv and screen.get_size() != to_pygame_screen_size:
+    if not forcefull and screen.get_size() != to_pygame_screen_size:
         print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
         screen = pygame.display.set_mode(to_pygame_screen_size)
 
-    if "forcefull" in sys.argv:
+    if forcefull:
         screen_size = 256
         screen_tleft = [0, 0]
 
-    for y in range(screen_size+1):
-        for x in range(screen_size+1):
-            x_coord = (x + screen_tleft[0]) % 256
-            y_coord = (y + screen_tleft[1]) % 256
-            screen.fill((env.space[x_coord][y_coord]), [x*4, y*4, 4, 4])
+    # Courtesy of ChatGPT
+    render = pygame.Surface((256, 256))
+    pygame.surfarray.blit_array(render, env.space)
+    scaled_render = pygame.transform.scale(render, (1024, 1024))
+    screen.blit(scaled_render, (0, 0))
+
+    # for y in range(screen_size+1):
+    #     for x in range(screen_size+1):
+    #         x_coord = (x + screen_tleft[0]) % 256
+    #         y_coord = (y + screen_tleft[1]) % 256
+    #         screen.fill((env.space[x_coord][y_coord]), [x*4, y*4, 4, 4])
+            
     
 
-    if "showpointer" in sys.argv:
-        pygame.draw.circle(screen, tuple([255 - x for x in env.space[pointer[0]%256][pointer[1]%256]]), [
+    if showpointer:
+        pygame.draw.circle(screen, tuple([255 - x for x in list(env.space[pointer[0]%256][pointer[1]%256])]), [
             ((pointer[0] - screen_tleft[0])%256)*4 + 2,
             ((pointer[1] - screen_tleft[1])%256)*4 + 2], 6, width=2)
 
-    if "forcefull" in sys.argv:
+    if forcefull:
         screen_size = env.space[254][254][1]
         screen_tleft = env.space[255][254][1:]
-        pygame.draw.rect(screen, debug_color, [screen_tleft[0]*4 + 2, 
-                                            screen_tleft[1]*4 + 2,
-                                            screen_size*4, 
-                                            screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4 + 2,
-                                            (screen_tleft[1])*4 + 2,
-                                            screen_size*4, 
-                                            screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0])*4 + 2,
-                                            (screen_tleft[1] - 256)*4 + 2,
-                                            screen_size*4, 
-                                            screen_size*4], width=2)
-        
-        pygame.draw.rect(screen, debug_color, [(screen_tleft[0] - 256)*4,
-                                            (screen_tleft[1] - 256)*4,
-                                            screen_size*4, 
-                                            screen_size*4], width=2)
+        draw_bleeding_rect(screen_tleft, [screen_size, screen_size])
+
 
 while True:
     # update the display
@@ -196,7 +216,7 @@ while True:
     if stop:
         break
 
-    if "stepping" in sys.argv:
+    if stepping:
         pygame.event.clear()
         while True:
             event = pygame.event.wait()
@@ -209,13 +229,13 @@ while True:
     # clock.tick(60)
 
     # instructions
-    pixel = env.get_pixel(pointer)
     pointer = list(pointer)
+    pixel = env.get_pixel(pointer)
 
     # NULL does nothing, no need to check for it
     # OFFSET
 
-    if "forcefull" in sys.argv:
+    if forcefull:
         blit()
 
     match pixel[0]:
@@ -252,10 +272,10 @@ while True:
             bottom_right = env.get_pixel(pointer, 1)[1:]
             target = env.get_pixel(pointer, 2)[1:]
 
-            for x in range(top_left[0], bottom_right[0]):
-                for y in range(top_left[1], bottom_right[1]):
+            for x in range(top_left[0] - (256 if top_left[0] > bottom_right[0] else 0), bottom_right[0]):
+                for y in range(top_left[1] - (256 if top_left[1] > bottom_right[1] else 0), bottom_right[1]):
                     env.set_pixel(
-                        (x - top_left[0] + target[0], y - top_left[1] + target[0]),
+                        (x - top_left[0] + target[0], y - top_left[1] + target[1]),
                         env.get_pixel((x - top_left[0], y - top_left[1]))
                     )
         
@@ -267,14 +287,14 @@ while True:
             bottom_right = env.get_pixel(pointer, 1)[1:]
             target = env.get_pixel(pointer, 2)
 
-            for x in range(top_left[0], bottom_right[0]):
-                for y in range(top_left[1], bottom_right[1]):
+            for x in range(top_left[0] - (256 if top_left[0] > bottom_right[0] else 0), bottom_right[0]):
+                for y in range(top_left[1] - (256 if top_left[1] > bottom_right[1] else 0), bottom_right[1]):
                     env.set_pixel(
-                        (x - top_left[0] + target[0], y - top_left[1] + target[0]),
+                        (x - top_left[0], y - top_left[1]),
                         target
                     )
         
-            print(f"Fill area instruction, copied from {top_left} to {bottom_right} with {target}")
+            print(f"Fill area instruction, filled {top_left} to {bottom_right} with {target}")
             pointer = env._get_address_offset(pointer, 2)
         
         case 0xCA:
@@ -312,7 +332,7 @@ while True:
             print(f"Branch instruction, to {target}")
             # append to stack
             for s in range(256):
-                if env.space[s][255] == (0, 0, 0):
+                if np.array_equal(env.space[s][255], (0, 0, 0)):
                     env.set_pixel([s, 255], (0x40, pointer[0], pointer[1]))
                     break
             else:
@@ -331,10 +351,10 @@ while True:
             # find where to return to
             for s in range(256):
                 stack_val = env.space[255-s][255]
-                if stack_val != (0, 0, 0):
+                if not np.array_equal(stack_val, (0, 0, 0)):
                     target = stack_val[1:]
-                    env.set_pixel([255-s, 255], (0, 0, 0)) 
                     pointer = list(target)
+                    env.set_pixel([255-s, 255], (0, 0, 0)) 
                     break
             else:
                 pointer = [0, 0]
@@ -401,6 +421,9 @@ while True:
             pointer = env._get_address_offset(pointer, offset)
             print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
             continue
+            
+        case _:
+            print("Unrecognized opcode")
 
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
@@ -409,7 +432,7 @@ while True:
 state = Image.new("RGB", (256, 256))
 for x in range(256):
     for y in range(256):
-        state.putpixel((x, y), env.get_pixel([x, y]))
+        state.putpixel((x, y), tuple(env.get_pixel([x, y])))
 
 # to load, put a goto instruction as the first pixel
 state.putpixel((0, 0), (0x40, pointer[0], pointer[1]))
