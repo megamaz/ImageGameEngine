@@ -4,7 +4,7 @@ import sys
 import os
 import numpy as np
 
-code = Image.open("./code.png")
+code = Image.open(sys.argv[1])
 
 if code.size != (256, 256):
     print("Image size is not correct.")

@@ -1,7 +1,10 @@
 from PIL import Image, ImageDraw
 import random
+import sys
 
-code = open("./code.txt", "r").read().splitlines()
+print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
+
+code = open(sys.argv[1], "r").read().splitlines()
 
 x, y = 0, 0
 img = Image.new("RGB", (256, 256))
@@ -13,6 +16,7 @@ draw = ImageDraw.Draw(img)
 # PASS (advances writer without writing anything) 
 # IMPORT|x y|filename (imports an image into the address space, useful if you have assets)
 #                      if the image is larger than 256x256, an error will be thrown.
+#                      supports alpha! anything other than FULLY OPAQUE will be ignored.
 # r g b (writes at address, advances writer) #
 
 for line in code:
@@ -54,16 +58,22 @@ for line in code:
         continue
 
     elif l.startswith("IMPORT"):
+        asset_name = l.split("|")[-1]
         asset = Image.open(l.split("|")[-1])
         if asset.size[0] > 256 or asset.size[1] > 256:
             raise IndexError(f"Asset {l.split('|')[-1]} too large.")
         
         offset_str = l.split("|")[1]
         x_off = int(offset_str.split(" ")[0], 16)
-        y_off = int(offset_str.split(" ")[y], 16)
+        y_off = int(offset_str.split(" ")[1], 16)
         for y in range(asset.size[1]):
             for x in range(asset.size[0]):
-                img.putpixel(((x+x_off)%257, (y+y_off)%256), asset.getpixel((x, y)))
+                pixel = asset.getpixel((x, y))
+                if len(pixel) == 4 and pixel[3] != 255:
+                    continue
+
+                img.putpixel(((x+x_off)%257, (y+y_off)%256), pixel)
+        print(f"Imported asset {asset_name} into {x_off}, {y_off}")
 
     if len(l.split(" ")) == 3:
         color = tuple([int(v, 16) for v in l.split(" ")])
@@ -82,4 +92,4 @@ for line in code:
         x %= 256
     
 
-img.save("code.png")
+img.save(sys.argv[2])
