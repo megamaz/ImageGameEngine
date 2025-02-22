@@ -176,7 +176,7 @@ def blit(rects:list=[]):
     if showpointer:
         pygame.draw.circle(screen, tuple([255 - x for x in list(env.space[pointer[0]%256][pointer[1]%256])]), [
             ((pointer[0] - screen_tleft[0])%256)*4 + 2,
-            ((pointer[1] - screen_tleft[1])%256)*4 + 2], 6, width=2)
+            ((pointer[1] - screen_tleft[1])%256)*4 + 2], 10, width=4)
 
     if forcefull:
         screen_size = env.space[254][254][1]
@@ -209,6 +209,7 @@ while True:
     pixel = env.get_pixel(pointer)
     rects = []
     
+    print(pointer)
     # instructions
     match pixel[0]:
 
@@ -236,9 +237,8 @@ while True:
             target = pixel[1:]
             value = env.get_pixel(pointer, 1)
             env.set_pixel(target, value)
-            pointer = env._get_address_offset(pointer, 1)        
             print(f"Write instruction, wrote {value} at {target}")
-            
+            pointer = env._get_address_offset(pointer, 1)            
 
         case 0xC0: # COPY AREA
             top_left = pixel[1:]
@@ -383,13 +383,15 @@ while True:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-            b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result)-2, 3):
+            # b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result), 3):
+                print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
             print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-            rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3+3], (0, 0, 0)))
+            if forcefull and showpointer:
+                rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3+3], (0, 0, 0)))
             # continue
 
         case 0x3A | 0x3B | 0x3C: # BITWISE
@@ -413,17 +415,19 @@ while True:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-            b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result)-2, 3):
+            # b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result), 3):
+                print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
             print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
-            rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3 + 3], (0, 0, 0)))
+            if forcefull and showpointer:
+                rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3 + 3], (0, 0, 0)))
             # continue
             
         case _:
-            print("Unrecognized opcode")
+            print(f"Unrecognized opcode '{hex(pixel[0])}'")
 
     # control stuff
     if speed is not None:
