@@ -158,7 +158,7 @@ def blit(rects:list=[]):
     screen_tleft = env.space[255][254][1:]
     screen_size = env.space[254][254][1]
 
-    to_pygame_screen_size = (screen_size*4 + 4, screen_size*4 + 4)
+    to_pygame_screen_size = (screen_size*4, screen_size*4)
     if not forcefull and screen.get_size() != to_pygame_screen_size:
         print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
         screen = pygame.display.set_mode(to_pygame_screen_size)
@@ -408,8 +408,7 @@ while True:
 
         case 0x3A | 0x3B | 0x3C: # BITWISE
             target = pixel[1:]
-            padding, horiz_offfset = env.get_pixel(pointer, 1)[1:]
-            pointer = env._get_address_offset(pointer, 2)
+            pointer = env._get_address_offset(pointer, 1)
             val1, val2, offset = env.get_double_val(pointer)
             result = 0
 
