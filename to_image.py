@@ -31,9 +31,9 @@ def get_value(string:str):
 for line in code:
     l = line.strip()
 
-    if line == "":
+    if l == "":
         continue
-    if line.startswith("#"):
+    if l.startswith("#"):
         print()
         continue
 
