@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw
-import random
+import randomness
 import sys
 
 print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
@@ -10,7 +10,8 @@ x, y = 0, 0
 img = Image.new("RGB", (256, 256))
 draw = ImageDraw.Draw(img)
 
-# INSTRUCTIONS (all numbers are in hex)
+# INSTRUCTIONS
+# INIT_RANDOM (sets the entire screen to be random, for fun :) (you probably want this at the start of the file if you want to put code on top))
 # TO|x y (puts writer at address)
 # FILL|x y|x y|r g b (fills address)
 # PASS (advances writer without writing anything) 
@@ -18,16 +19,25 @@ draw = ImageDraw.Draw(img)
 #                      if the image is larger than 256x256, an error will be thrown.
 #                      supports alpha! anything other than FULLY OPAQUE will be ignored.
 # r g b (writes at address, advances writer) #
+# values starting with a $ will be treated as DECIMAL
+# everything else will be treated as a HEX
+
+def get_value(string:str):
+    if string.startswith("$"):
+        return int(string[1:])
+    else:
+        return int(string, 16)
 
 for line in code:
+    l = line.strip()
+
     if line == "":
         continue
     if line.startswith("#"):
         print()
         continue
 
-    l = line.split(" #")[0]
-    l = l.rstrip()
+    l = l.split(" #")[0]
     print(l, end=": ")
 
     # variables
@@ -40,19 +50,23 @@ for line in code:
     l = l.replace(" X", hex(x)[2:])
     l = l.replace(" Y", hex(y)[2:])
 
+    if l.startswith("INIT_RANDOM"):
+        img = randomness.gen_random(sys.argv[2])
+        draw = ImageDraw.Draw(img)
+        continue
 
-    if l.startswith("TO"):
+    elif l.startswith("TO"):
         values = l.split("|")[1].split(" ")
-        x = int(values[0], 16)
-        y = int(values[1], 16)
+        x = get_value(values[0])
+        y = get_value(values[1])
         print(f"Jumped writer to {x}, {y}")
         continue
     
     elif l.startswith("FILL"):
         values = l.split("|")
-        start_address = tuple([int(v, 16) for v in values[1].split(" ")])
-        end_address = tuple([int(v, 16) for v in values[2].split(" ")])
-        color = tuple([int(v, 16) for v in values[3].split(" ")])
+        start_address = tuple([get_value(v) for v in values[1].split(" ")])
+        end_address = tuple([get_value(v) for v in values[2].split(" ")])
+        color = tuple([get_value(v) for v in values[3].split(" ")])
         draw.rectangle([start_address, end_address], color)
         print(f"Filled area from {start_address} to {end_address} with {color}")
         continue
@@ -64,8 +78,8 @@ for line in code:
             raise IndexError(f"Asset {l.split('|')[-1]} too large.")
         
         offset_str = l.split("|")[1]
-        x_off = int(offset_str.split(" ")[0], 16)
-        y_off = int(offset_str.split(" ")[1], 16)
+        x_off = get_value(offset_str.split(" ")[0])
+        y_off = get_value(offset_str.split(" ")[1])
         for y in range(asset.size[1]):
             for x in range(asset.size[0]):
                 pixel = asset.getpixel((x, y))
@@ -76,8 +90,8 @@ for line in code:
         print(f"Imported asset {asset_name} into {x_off}, {y_off}")
 
     if len(l.split(" ")) == 3:
-        color = tuple([int(v, 16) for v in l.split(" ")])
-        print(f"Wrote singular color at {x}, {y}: {color}")
+        color = tuple([get_value(v) for v in l.split(" ")])
+        print(f"Wrote singular color at {hex(x)}, {hex(y)}: {color}")
         img.putpixel((x, y), color)
     elif not l.startswith("PASS"):
         print()
