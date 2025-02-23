@@ -6,7 +6,6 @@ print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
 
 code = open(sys.argv[1], "r").read().splitlines()
 
-x, y = 0, 0
 img = Image.new("RGB", (256, 256))
 draw = ImageDraw.Draw(img)
 
@@ -18,7 +17,10 @@ draw = ImageDraw.Draw(img)
 # IMPORT|x y|filename (imports an image into the address space, useful if you have assets)
 #                      if the image is larger than 256x256, an error will be thrown.
 #                      supports alpha! anything other than FULLY OPAQUE will be ignored.
-# r g b (writes at address, advances writer) #
+# r g b (writes at address, advances writer) 
+# LABEL|NAME (creates labels to reference an address earlier or later in memory) 
+#             used labels will refer to where they were created. creating a label acts like a PASS command.
+# To use a label, use L:NAME instead of two address bytes. #
 # values starting with a $ will be treated as DECIMAL
 # everything else will be treated as a HEX
 
@@ -28,27 +30,52 @@ def get_value(string:str):
     else:
         return int(string, 16)
 
+# first pass to do labels
+x, y = 0, 0
+label_coords = {}
 for line in code:
-    l = line.strip()
+    l = line.split("#")[0]
+    l = l.strip()
+    if l == "":
+        continue
+
+    if l.startswith("#"):
+        continue
+
+    if l.startswith("TO"):
+        values = l.split("|")[1].split(" ")
+        x = get_value(values[0])
+        y = get_value(values[1])
+        continue
+
+    elif l.startswith("LABEL"):
+        name = l.split("|")[1]
+        label_coords[name] = (x, y)
+        print(f"created label '{name}' at {hex(x)}, {hex(y)}")
+    elif len(l) != 0:
+        pass
+    else:
+        continue
+
+    y += 1
+    y %= 256
+    if y == 0:
+        x += 1
+        x %= 256
+
+x, y = 0, 0
+for line in code:
+    l = line.split(" #")[0]
+    l = l.strip()
 
     if l == "":
         continue
+
     if l.startswith("#"):
         print()
         continue
 
-    l = l.split(" #")[0]
     print(l, end=": ")
-
-    # variables
-    l = l.replace("X+", hex(x+1)[2:])
-    l = l.replace("Y+", hex(y+1)[2:])
-
-    l = l.replace("X-", hex(x-1)[2:])
-    l = l.replace("Y-", hex(y-1)[2:])
-
-    l = l.replace(" X", hex(x)[2:])
-    l = l.replace(" Y", hex(y)[2:])
 
     if l.startswith("INIT_RANDOM"):
         img = randomness.gen_random(sys.argv[2])
@@ -89,15 +116,21 @@ for line in code:
                 img.putpixel(((x+x_off)%257, (y+y_off)%256), pixel)
         print(f"Imported asset {asset_name} into {x_off}, {y_off}")
 
-    if len(l.split(" ")) == 3:
+    if len(l.split(" ")) == 3: # no label on this line
         color = tuple([get_value(v) for v in l.split(" ")])
-        print(f"Wrote singular color at {hex(x)}, {hex(y)}: {color}")
         img.putpixel((x, y), color)
-    elif not l.startswith("PASS"):
+        print(f"Wrote singular color at {hex(x)}, {hex(y)}: {color}")
+    elif "L:" in l: # line has a label
+        red = get_value(l.split(" ")[0])
+        coords = label_coords[l.split("L:")[1]]
+        green, blue = coords
+        img.putpixel((x, y), (red, green, blue))
+        print(f"Wrote singular color with label at {hex(x)}, {hex(y)}: {(red, green, blue)}")
+    elif l.startswith("PASS") or l.startswith("LABEL"):
+        print(f"Advanced writer without writing")
+    else:
         print()
         continue
-    else:
-        print(f"Advanced writer without writing")
 
     y += 1
     y %= 256
