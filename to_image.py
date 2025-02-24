@@ -125,9 +125,9 @@ for line in code:
         coords = label_coords[l.split("L:")[1]]
         green, blue = coords
         img.putpixel((x, y), (red, green, blue))
-        print(f"Wrote singular color with label at {hex(x)}, {hex(y)}: {(red, green, blue)}")
+        print(f"Wrote singular color with label at {hex(x)}, {hex(y)}: {(hex(red), hex(green), hex(blue))}")
     elif l.startswith("PASS") or l.startswith("LABEL"):
-        print(f"Advanced writer without writing")
+        print(f"Advancing writer without writing from {hex(x)}, {hex(y)}")
     else:
         print()
         continue

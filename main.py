@@ -221,7 +221,6 @@ while True:
     pixel = env.get_pixel(pointer)
     rects = []
     
-    print(pointer)
     # instructions
     match pixel[0]:
 
@@ -275,8 +274,8 @@ while True:
             print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
             pointer = env._get_address_offset(pointer, 2)
             
-            for y in range(bottom_right[1] + vert_offset - top_left[1]):
-                for x in range(bottom_right[0] + horiz_offfset - top_left[0]):
+            for y in range(bottom_right[1] + vert_offset - top_left[1]+1):
+                for x in range(bottom_right[0] + horiz_offfset - top_left[0]+1):
                     fetch_val = env.get_pixel([(x + top_left[0])%256, (y + top_left[1])%256])
                     env.set_pixel([(x+target[0])%256, (y+target[1])%256], fetch_val)
         
@@ -395,8 +394,8 @@ while True:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-            # b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result), 3):
+            b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result)-3, 3):
                 print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
@@ -426,8 +425,8 @@ while True:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
-            # b_result += b'\x00\x00\x00' # padding
-            for b in range(0, len(b_result), 3):
+            b_result += b'\x00\x00\x00' # padding
+            for b in range(0, len(b_result)-3, 3):
                 print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
