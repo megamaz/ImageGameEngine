@@ -1,4 +1,4 @@
-INIT_RANDOM # for fun
+#INIT_RANDOM # for fun
 
 # setup initial state
 TO|FE FE

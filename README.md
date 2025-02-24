@@ -21,6 +21,36 @@ Every pixel is split into their RGB values:
 - `R` will be the instruction type.
 - `G` and `B` will be treated differently depending on the instruction.
 
+## Using This Project
+### `main.py`
+The main.py runs an image as code and renders the window.
+Here's how main.py expects to be run:
+```
+> py main.py [path to png] [parameters]
+```
+The available parameters for main.py are:
+- `forcefull` Forcefully renders the whole 256x256 address space.
+- `showpointer` Renders some additional debug info:
+    - A circle to render the current pointer position
+    - The copy area instruction has a green square for the source address space, and the target address space.
+    - Black squares for the fill-area instruction, BITWISE, and ARITHMETIC instructions, to show where something has been written.
+- `debug` Logs to the console every instruction that gets ran, as well as some info about the instruction and pointer position when relevant.
+- `stepping` Pauses execution and allows you to step instruction-per-instruction through the process. To step one instruction forward, use the `]` key.
+- `speed [x]` The `[x]` parameter needs to be an integer above 1. It will force the game to run at that FPS, rather than as fast as it can run. There *needs* to be a space after the word `speed` to properly parse it.
+
+### `get_keycode.py`
+Simply run it, press the key you want, and it'll print out the hex keycode in the console for you to use in your project.
+
+### `randomness.py`
+Generates a random image containing *only* instructions and saves the result to `./code.png`.
+
+### `to_image.py`
+Takes in a plaintext file that can be interpreted as ige code and generates the correct png that can then be ran as ige code. It takes in two parameters:
+```
+> py to_image.py [path to plaintext] [output png path]
+```
+It'll log to the console every instruction that gets written, and useful writer info when relevant. For how to write in this language, check out the [ige.md](./ige.md)
+
 # Instructions
 The list of instructions. They'll be written in hex (`0x00` to `0xFF`).
 

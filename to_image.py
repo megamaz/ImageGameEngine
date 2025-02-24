@@ -77,6 +77,28 @@ for line in code:
 
     print(l, end=": ")
 
+    l = l.replace("X+", hex(x+1)[2:])
+    l = l.replace("Y+", hex(y+1)[2:])
+
+    l = l.replace("X-", hex(x-1)[2:])
+    l = l.replace("Y-", hex(y-1)[2:])
+
+    l = l.replace(" X", hex(x)[2:])
+    l = l.replace(" Y", hex(y)[2:])
+
+    # replace labels
+    if "L:" in l:
+        # get label
+        contents = l.split(" ")
+        label_index = [1 if k.startswith("L:") else 0 for k in contents].index(1)
+        label_name = contents[label_index].split(":")[1]
+        coords = label_coords[label_name]
+
+        # replace
+        l = l.replace(f"L:{label_name}", f"{hex(coords[0])[2:]} {hex(coords[1])[2:]}")
+        print(f"Replaced L:{label_name} with `{hex(coords[0])[2:]} {hex(coords[1])[2:]}`")
+
+
     if l.startswith("INIT_RANDOM"):
         img = randomness.gen_random(sys.argv[2])
         draw = ImageDraw.Draw(img)
@@ -119,13 +141,8 @@ for line in code:
     if len(l.split(" ")) == 3: # no label on this line
         color = tuple([get_value(v) for v in l.split(" ")])
         img.putpixel((x, y), color)
-        print(f"Wrote singular color at {hex(x)}, {hex(y)}: {color}")
-    elif "L:" in l: # line has a label
-        red = get_value(l.split(" ")[0])
-        coords = label_coords[l.split("L:")[1]]
-        green, blue = coords
-        img.putpixel((x, y), (red, green, blue))
-        print(f"Wrote singular color with label at {hex(x)}, {hex(y)}: {(hex(red), hex(green), hex(blue))}")
+        print(f"Wrote singular color at {hex(x)}, {hex(y)}: ({', '.join([hex(j)[2:].upper() for j in color])})")
+    
     elif l.startswith("PASS") or l.startswith("LABEL"):
         print(f"Advancing writer without writing from {hex(x)}, {hex(y)}")
     else:
