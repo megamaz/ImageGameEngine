@@ -392,7 +392,9 @@ while True:
 
         case 0x2A | 0x2B | 0x2C | 0x2D: # ARITHMETIC
             target = pixel[1:]
-            pointer = env._get_address_offset(pointer, 1)
+            padding = env.get_pixel(pointer, 1)[1]
+            padding_val = env.get_pixel(pointer, 1)[2]
+            pointer = env._get_address_offset(pointer, 2)
             val1, val2, offset = env.get_double_val(pointer)
             result = 0
             if pixel[0] == 0x2A:
@@ -415,6 +417,7 @@ while True:
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
             b_result += b'\x00\x00\x00' # padding
+            b_result = (bytes([padding_val,]) * padding) + b_result
             for b in range(0, len(b_result)-3, 3):
                 print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
@@ -427,7 +430,9 @@ while True:
 
         case 0x3A | 0x3B | 0x3C: # BITWISE
             target = pixel[1:]
-            pointer = env._get_address_offset(pointer, 1)
+            padding = env.get_pixel(pointer, 1)[1]
+            padding_val = env.get_pixel(pointer, 1)[2]
+            pointer = env._get_address_offset(pointer, 2)
             val1, val2, offset = env.get_double_val(pointer)
             result = 0
 
@@ -446,6 +451,7 @@ while True:
             except OverflowError:
                 b_result = result.to_bytes((len(hex(result)[2:])//2)+1)
             b_result += b'\x00\x00\x00' # padding
+            b_result = (bytes([padding_val,]) * padding) + b_result
             for b in range(0, len(b_result)-3, 3):
                 print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
@@ -455,6 +461,9 @@ while True:
             if forcefull and showpointer:
                 rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3 + 3], (0, 0, 0)))
             # continue
+            
+        case 0x00:
+            ...
             
         case _:
             print(f"Unrecognized opcode '{hex(pixel[0])}'")

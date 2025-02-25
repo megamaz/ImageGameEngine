@@ -140,6 +140,7 @@ Returns to the last executed "branch to" instruction. Or rather, it searches for
 ## `0x2_`: Arithmetic operators
 This will do arithmetic. The following pixels are treated either as value / variable mode pixels, save for the first parameters which are to know where to store the result.
 - `G_1`, `B_1`: Address of the result. Data will be written as concatenated RGB pixels.
+- `G_2`: Byte padding. Will add `G_2` of `B_2` bytes at the start. Is useful if you wanna store a result into the G or B of a pixel rather than the R.
 
 Arithmetic operators are:
 - `0x2A`: Add
@@ -150,6 +151,7 @@ Arithmetic operators are:
 ## `0x3_`: Bitwise operators
 Works the same as arithmetic operators, but does bitwise operations instead.
 - `G_1`, `B_1`: Address of the result. Data will be written as concatenated RGB pixels.
+- `G_2`: Byte padding. Will add `G_2` of `B_2` bytes at the start. Is useful if you wanna store a result into the G or B of a pixel rather than the R.
 
 Bitwise operations are:
 - `0x3A`: Logical AND
