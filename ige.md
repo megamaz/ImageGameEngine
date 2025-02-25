@@ -73,7 +73,9 @@ Then, instead of having to put a `40 67 67`, given that the `67 67` can change i
 # some code...
 FF FF FF
 # our fuction definition, but since we're not sure where it is, we use a label
+# we follow our label with a TO so that we don't have a wasted blank pixel
 LABEL|my_function
+TO| X Y-
 3C 40 40 
 # ...
 ```

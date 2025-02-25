@@ -139,7 +139,7 @@ class Environment:
 
 def draw_bleeding_rect(tleft, size, debug_color=(255, 255, 255)):
     "size is [w, h]"
-    width = 4
+    width = 1
     def do():
         pygame.draw.rect(screen, debug_color, [tleft[0]*4 + 2, 
                                         tleft[1]*4 + 2,
@@ -213,6 +213,10 @@ def blit(rects:list=[]):
     
     for r in rects:
         r()
+
+    # control stuff
+    if speed is not None and not forcefull:
+        clock.tick(speed)
 
 pixel = [0, 0, 0]
 pointer = [0, 0]
@@ -473,10 +477,6 @@ while True:
             
         case _:
             print(f"Unrecognized opcode '{hex(pixel[0])}'")
-
-    # control stuff
-    if speed is not None:
-        clock.tick(speed)
 
     if forcefull:
         blit(rects)
