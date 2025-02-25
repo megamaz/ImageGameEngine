@@ -145,8 +145,9 @@ This will do arithmetic. The following pixels are treated either as value / vari
 Arithmetic operators are:
 - `0x2A`: Add
 - `0x2B`: Multiply
-- `0x2C`: Euclidean division (val1 / val2) (divisions by 0 return 0)
-- `0x2D`: Subtraction (val1 - val2) (results smaller than 0 return 0) [DEFAULT]
+- `0x2C`: Euclidean division (val1 / val2) (divisions by 0 returns 0)
+- `0x2D`: Subtraction (val1 - val2) (results smaller than 0 returns 0)
+- `0x2E`: Modulo operator (val1 % val2) (modulo by 0 returns 0) [DEFAULT]
 
 ## `0x3_`: Bitwise operators
 Works the same as arithmetic operators, but does bitwise operations instead.

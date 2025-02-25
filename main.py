@@ -390,7 +390,7 @@ while True:
             # pointer = env._get_address_offset(pointer, 1)
             # continue
 
-        case 0x2A | 0x2B | 0x2C | 0x2D: # ARITHMETIC
+        case 0x2A | 0x2B | 0x2C | 0x2D | 0x2E: # ARITHMETIC
             target = pixel[1:]
             padding = env.get_pixel(pointer, 1)[1]
             padding_val = env.get_pixel(pointer, 1)[2]
@@ -408,9 +408,15 @@ while True:
                     result = 0
                 else:
                     result = val1 // val2
-            else:
+            elif pixel[0] == 0x2D:
                 result = val1 - val2
                 result = max(0, result)
+
+            else:
+                if val2 == 0:
+                    result = 0
+                else:
+                    result = val1 % val2
 
             try:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
