@@ -51,6 +51,15 @@ Takes in a plaintext file that can be interpreted as ige code and generates the 
 ```
 It'll log to the console every instruction that gets written, and useful writer info when relevant. For how to write in this language, check out the [ige.md](./ige.md)
 
+### `decompile.py`
+Takes in an image and outputs all the pixels as a list of triple hex codes. If you find reading a bunch of assembly-like hex codes to understand a game, this could be fun for you. It could also be helpful in debugging.
+
+Takes two parameters:
+1. path to png
+2. output path
+
+The output is formatted as `address: code`. 
+
 # Instructions
 The list of instructions. They'll be written in hex (`0x00` to `0xFF`).
 
