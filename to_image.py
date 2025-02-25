@@ -42,6 +42,15 @@ for line in code:
     if l.startswith("#"):
         continue
 
+    l = l.replace("X+", hex(x+1)[2:])
+    l = l.replace("Y+", hex(y+1)[2:])
+
+    l = l.replace("X-", hex(x-1)[2:])
+    l = l.replace("Y-", hex(y-1)[2:])
+
+    l = l.replace(" X", hex(x)[2:])
+    l = l.replace(" Y", hex(y)[2:])
+
     if l.startswith("TO"):
         values = l.split("|")[1].split(" ")
         x = get_value(values[0])
