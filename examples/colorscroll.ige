@@ -19,6 +19,7 @@ TO|50 50
 
 # add FE to color
 2A FF 00
+00 00 00
 A1 FF 00
 00 03 00
 A0 01 00
