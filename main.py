@@ -170,7 +170,7 @@ def blit(rects:list=[]):
     screen_tleft = env.space[255][254][1:]
     screen_size = env.space[254][254][1]
 
-    to_pygame_screen_size = (screen_size*4 + 4, screen_size*4 + 4)
+    to_pygame_screen_size = (screen_size*4, screen_size*4)
     if not forcefull and screen.get_size() != to_pygame_screen_size:
         screen = pygame.display.set_mode(to_pygame_screen_size)
         if screen_size != 0:
@@ -189,15 +189,15 @@ def blit(rects:list=[]):
     scaled_render = pygame.transform.scale(render, (1024, 1024))
     if not forcefull:
         screen.blit(scaled_render, tuple([
-            screen_tleft[0]-1024, screen_tleft[1]-1024
+            screen_tleft[0]*-4 + 1024, screen_tleft[1]*-4 + 1024
         ]))
         screen.blit(scaled_render, tuple([
-            screen_tleft[0], screen_tleft[1]-1024
+            screen_tleft[0]*-4, screen_tleft[1]*-4 + 1024
         ]))
         screen.blit(scaled_render, tuple([
-            screen_tleft[0]-1024, screen_tleft[1]
+            screen_tleft[0]*-4 + 1024, screen_tleft[1]*-4
         ]))
-        screen.blit(scaled_render, tuple(screen_tleft))
+        screen.blit(scaled_render, tuple([n*-4 for n in screen_tleft]))
     else:
         screen.blit(scaled_render, (0, 0))
 
@@ -390,7 +390,7 @@ while True:
             # pointer = env._get_address_offset(pointer, 1)
             # continue
 
-        case 0x2A | 0x2B | 0x2C: # ARITHMETIC
+        case 0x2A | 0x2B | 0x2C | 0x2D: # ARITHMETIC
             target = pixel[1:]
             pointer = env._get_address_offset(pointer, 1)
             val1, val2, offset = env.get_double_val(pointer)
@@ -401,12 +401,14 @@ while True:
             elif pixel[0] == 0x2B:
                 result = val1 * val2
 
-            # elif pixel[0] == 0x2C:
-            else:
+            elif pixel[0] == 0x2C:
                 if val2 == 0:
                     result = 0
                 else:
                     result = val1 // val2
+            else:
+                result = val1 - val2
+                result = max(0, result)
 
             try:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))

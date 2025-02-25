@@ -73,7 +73,7 @@ An underscore in the hex value means that value will change depending on the ins
 Not an instruction (does nothing). Should be used whenever this pixel is meant to be part of the parameter from the previous pixel (this prevents this pixel from being accidentally ran as an instruction)
 
 ## `0x50`: Offset
-Ignores the next `G_1` pixels. Should be used at the top of your screen in order to ensure that your screen isn't executed as code.
+Ignores the next `G_1` pixels. Jumping 0 pixels makes the pointer land on where it currently is, then re-executes the offset instruction, soft-locking the proram in an infinite loop. This is to say that, whatever the pointer lands on will be executed before the pointer continues to move.
 
 ## `0x40`: Goto
 Goes to the specified address.
@@ -107,7 +107,8 @@ Copies a singular pixel to another.
 - `G_2`, `B_2`: The target pixel.
 
 ## `0xD0`: Fill area
-- `G_1`, `B_1`: The top left corner of the data to copy.
+Fills a square/rectangular area with a singular color. This wraps; it starts at the "top left", and works its way down and to the right, wrapping around the screen (if needed) until it reaches the "bottom right". 
+- `G_1`, `B_1`: The top left corner of the square.
 - `G_2`, `B_2`: The bottom right corner of the data to copy.
 - `R_3`, `G_3`, `B_3`: The value to fill with.
 
@@ -143,7 +144,8 @@ This will do arithmetic. The following pixels are treated either as value / vari
 Arithmetic operators are:
 - `0x2A`: Add
 - `0x2B`: Multiply
-- `0x2C`: Euclidean division (divisions by 0 return 0) [DEFAULT]
+- `0x2C`: Euclidean division (val1 / val2) (divisions by 0 return 0)
+- `0x2D`: Subtraction (val1 - val2) (results smaller than 0 return 0) [DEFAULT]
 
 ## `0x3_`: Bitwise operators
 Works the same as arithmetic operators, but does bitwise operations instead.
