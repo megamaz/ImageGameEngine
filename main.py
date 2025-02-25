@@ -76,6 +76,18 @@ class Environment:
         for o in range(-(length//-3)):
             value += bytes([x for x in self.get_pixel(address, o)])
         
+        # some extra bytes from the pixel were included
+        # this is annoying, eally annoying because that means that an arithmetic instruction stores a result of 1 like this:
+        # 01 00 00
+        # but the program reads it like this:
+        # 0x10000
+        # so this patches that, as it is unintended behavior
+        if length % 3 != 0:
+            # if it's 1, then there's two extra bytes: G and B
+            # if it's 2, then there's one extra byte: just B
+            remove = 3 - (length % 3)
+            value = value[:-remove]
+        
         return int.from_bytes(value)
     
     def get_value_variable(self, address):
