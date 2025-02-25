@@ -62,13 +62,15 @@ TO|42 41
     # move all positions down using a copy area instruction
     # won't bother with copying only the snake length so im copying the whole row
     # ONLY goes down to FA to avoid overriding the screen position
-    C0 FE 01
-    00 FE FA
-    00 FE 02
+    # copy upwards to avoid overriding 
+    # this means we'll write the last body position to FE FB
+    C0 FE 02
+    00 FE FB
+    00 FE 01
 
     # copy the current head position to top of list
     CA FF 00
-    00 FE 01
+    00 FE FC
 
     # return (with a goto instruction) to main loop
     40 L:not_eaten
