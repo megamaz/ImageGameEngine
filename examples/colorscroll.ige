@@ -1,0 +1,41 @@
+# simply scrolls through colors
+# the scrolling is kinda weird lol
+
+INIT_RANDOM # just to show off that if you code correctly, random oob code shouldn't be executed
+# setup initial state
+TO|FE FE # screen size
+00 $64 00
+TO|FF FE # screen position
+00 00 01
+FILL|00 FF|FF FF|00 00 00 # clear call stack
+FILL|00 00|$64 00|40 50 50 # prevent running screen as code
+
+# keep track of current color
+TO|FF 00
+00 00 00
+
+# MAIN LOOP
+TO|50 50
+
+# add FE to color
+2A FF 00
+A1 FF 00
+00 03 00
+A0 01 00
+FE 00 00
+
+# fill screen with color
+# start by copying color just ahead
+CA FF 00
+00 L:color
+
+# now do the fill
+D0 00 01
+00 $65 $65
+LABEL|color
+
+# blit
+BB 00 00
+
+# and return to main loop
+40 50 50
