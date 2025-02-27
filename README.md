@@ -10,16 +10,24 @@ The image that gets rendered to the screen will depend on the registers set by t
 
 The image that gets loaded and ran is the *initial state* of the environment.
 
-## How to code
-For actually writing the code, there is a basic `to_image.py` that converts some basic instructions into the image. There is a small amount of documentation telling you exactly how that wokrs inside the comments of the file near the top.
-
-A reader pointed will scroll through the image, top to bottom, left to right. It starts in the top left. 
+A reader pointer will then scroll through the image, top to bottom, left to right. It starts in the top left. 
 
 The reader will always execute the current indexed pixel as code, unless previous instructions told it to treat the pixel differently.
 
 Every pixel is split into their RGB values:
 - `R` will be the instruction type.
 - `G` and `B` will be treated differently depending on the instruction.
+
+## How to code
+For actually writing the code, there is a basic `to_image.py` that converts some basic instructions into the image. Check out the [ige.md](./ige.md) for how to format a plaintext file that can be compiled into an image.
+
+This custom-made languge supports some really basic Syntax Highlighting. If you want to install this addon for VSCode, then in your VSCode terminal, enter the following command:
+```
+> code --install-extension ./VSCodeSyntax/ige/ige.vsix
+```
+Afterwards, press F1 and do "Reload Window". `.ige` files should now have syntax highlighting.
+
+It's unlikely that this vsix changes much. It doesn't have a language server, and the highlighting is really basic.
 
 ## Using This Project
 ### `main.py`
