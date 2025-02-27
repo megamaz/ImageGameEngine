@@ -429,7 +429,6 @@ while True:
             b_result += b'\x00\x00\x00' # padding
             b_result = (bytes([padding_val,]) * padding) + b_result
             for b in range(0, len(b_result)-3, 3):
-                print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
@@ -463,7 +462,6 @@ while True:
             b_result += b'\x00\x00\x00' # padding
             b_result = (bytes([padding_val,]) * padding) + b_result
             for b in range(0, len(b_result)-3, 3):
-                print((int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
