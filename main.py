@@ -67,9 +67,10 @@ class Environment:
         Assumes that the address is the 0xA0 pixel."""
         pixel = self.get_pixel(address)
         length = pixel[1]
-        return self.get_variable(self._get_address_offset(address, 1), length)
+        offset = pixel[2]
+        return self.get_variable(self._get_address_offset(address, 1), length, offset)
     
-    def get_variable(self, address, length) -> int:
+    def get_variable(self, address, length, offset) -> int:
         """Returns the concatenation of the given pixel as bytes.
         Assumes that the address is the pixel pointed to by the 0xA1 pixel."""
         value = b''
@@ -100,7 +101,8 @@ class Environment:
         elif pixel[0] == 0xA1: # VARIABLE mode
             target = pixel[1:]
             length = self.get_pixel(address, 1)[1]
-            return self.get_variable(target, length)
+            offset = self.get_pixel(address, 1)[2]
+            return self.get_variable(target, length, offset)
         
         return 0
 

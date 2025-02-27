@@ -97,6 +97,8 @@ Every pixel after that will be read as a value. So if `G_1=0x04` (hex value of 4
 If this pixel is `0xA1`, the pixel will be treated as a VARIABLE, and will be read like this:
 - `G_1`, `B_1`: The address of the variable.
 - `G_2`: The length of the variable, in bytes.
+- `B_2`: The amount of pixel offset to start reading the value from.
+    - For example, if you read from AA AA with an offset of hex 0A, you'll instead read from AA B4 (0xAA + 0x0A = 0xB4)
 
 ## `0xB0`: Write
 Writes a singular pixel value to a specific address.
