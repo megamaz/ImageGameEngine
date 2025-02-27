@@ -219,6 +219,8 @@ def blit(rects:list=[]):
     # control stuff
     if speed is not None and not forcefull:
         clock.tick(speed)
+    
+    pygame.display.flip()
 
 pixel = [0, 0, 0]
 pointer = [0, 0]
@@ -498,7 +500,7 @@ while True:
     if forcefull:
         blit(rects)
 
-    pygame.display.flip()
+    # pygame.display.flip()
 
     stop = True
     for event in pygame.event.get():
