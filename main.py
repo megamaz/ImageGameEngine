@@ -75,7 +75,7 @@ class Environment:
         Assumes that the address is the pixel pointed to by the 0xA1 pixel."""
         value = b''
         for o in range(-(length//-3)):
-            value += bytes([x for x in self.get_pixel(address, o)])
+            value += bytes([x for x in self.get_pixel(address, o + offset)])
         
         # some extra bytes from the pixel were included
         # this is annoying, eally annoying because that means that an arithmetic instruction stores a result of 1 like this:
