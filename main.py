@@ -219,7 +219,7 @@ def blit(rects:list=[]):
         r()
 
     # control stuff
-    if speed is not None and not forcefull:
+    if speed is not None:
         clock.tick(speed)
     
     pygame.display.flip()
