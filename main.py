@@ -257,10 +257,12 @@ while True:
         # VALUE / VARIABLE mode: we need to skip forward accordingly
         case 0xA0 | 0xA1:
             if pixel[0] & 0x01 == 0x00: # VALUE mode
-                pointer[1] += pixel[1]
+                pointer[1] += -(pixel[1] // -3)
             
             elif pixel[0] & 0x01 == 0x01: # VARIABLE mode
                 pointer[1] += 1
+            
+            pointer = env._get_address_offset(pointer, 0) # properly wrap
 
             print("Value / variable instruction, ignoring")
 
@@ -281,27 +283,38 @@ while True:
             target = env.get_pixel(pointer, 2)[1:]
 
             vert_offset = (256 if top_left[1] > bottom_right[1] else 0)
-            horiz_offfset = (256 if top_left[0] > bottom_right[0] else 0)
+            horiz_offset = (256 if top_left[0] > bottom_right[0] else 0)
 
             if showpointer and forcefull:
                 # source rect
                 rects.append(draw_bleeding_rect(top_left, [
-                    (bottom_right[0] + horiz_offfset) - top_left[0],
+                    (bottom_right[0] + horiz_offset) - top_left[0],
                     (bottom_right[1] + vert_offset) - top_left[1],
                 ], (0, 255, 0)))
                 # target rect
                 rects.append(draw_bleeding_rect(target, [
-                    (bottom_right[0] + horiz_offfset) - top_left[0],
+                    (bottom_right[0] + horiz_offset) - top_left[0],
                     (bottom_right[1] + vert_offset) - top_left[1],
                 ], (255, 0, 0)))
 
             print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
             pointer = env._get_address_offset(pointer, 2)
             
-            for y in range(bottom_right[1] + vert_offset - top_left[1]+1):
-                for x in range(bottom_right[0] + horiz_offfset - top_left[0]+1):
-                    fetch_val = env.get_pixel([(x + top_left[0])%256, (y + top_left[1])%256])
-                    env.set_pixel([(x+target[0])%256, (y+target[1])%256], fetch_val)
+            # Thank you ChatGPT for this one
+            # Calculate the source area with wrapping
+            src_x = np.arange(top_left[0], bottom_right[0] + horiz_offset + 1) % 256
+            src_y = np.arange(top_left[1], bottom_right[1] + vert_offset + 1) % 256
+            src_xx, src_yy = np.meshgrid(src_x, src_y)
+            src_indices = np.stack([src_xx.ravel(), src_yy.ravel()], axis=-1)
+
+            # Calculate the target area with wrapping
+            tgt_x = (src_indices[:, 0] - top_left[0] + target[0]) % 256
+            tgt_y = (src_indices[:, 1] - top_left[1] + target[1]) % 256
+            tgt_indices = np.stack([tgt_x, tgt_y], axis=-1)
+
+            # Copy the pixels
+            for src, tgt in zip(src_indices, tgt_indices):
+                env.set_pixel(tgt.tolist(), env.get_pixel(src.tolist()))
         
         
         case 0xD0: # FILL AREA
@@ -310,14 +323,18 @@ while True:
             target = env.get_pixel(pointer, 2)
 
             vert_offset = (256 if top_left[1] > bottom_right[1] else 0)
-            horiz_offfset = (256 if top_left[0] > bottom_right[0] else 0)
+            horiz_offset = (256 if top_left[0] > bottom_right[0] else 0)
 
-            for y in range(bottom_right[1] + vert_offset - top_left[1]):
-                for x in range(bottom_right[0] + horiz_offfset - top_left[0]):
-                    env.set_pixel(
-                        [(x+top_left[0])%256, (y+top_left[1])%256],
-                        target
-                    )
+            # once again, thank you ChatGPT
+            # Calculate the source area with wrapping
+            src_x = np.arange(top_left[0], bottom_right[0] + horiz_offset + 1) % 256
+            src_y = np.arange(top_left[1], bottom_right[1] + vert_offset + 1) % 256
+            src_xx, src_yy = np.meshgrid(src_x, src_y)
+            src_indices = np.stack([src_xx.ravel(), src_yy.ravel()], axis=-1)
+
+            # Fill the target area
+            for src in src_indices:
+                env.set_pixel(src.tolist(), target)
         
             print(f"Fill area instruction, filled {top_left} to {bottom_right} with {target}")
             pointer = env._get_address_offset(pointer, 2)
