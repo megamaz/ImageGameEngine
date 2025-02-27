@@ -9,7 +9,7 @@ FILL|00 00|40 00|40 41 41 # prevent running screen as code
 FILL|00 FF|FF FF|00 00 00 # clear call stack
 
 FILL|41 41|50 50|00 00 00 # clear code area
-FILL|FE 00|FE FB|00 00 00 # clear body stack
+FILL|FE 00|FE FD|00 00 00 # clear body stack
 
 # VAR:HEAD_POS at FF 00
 TO|FF 00
@@ -87,6 +87,18 @@ TO|41 41
 
     # the body
     # copy the current head position to top of list
+    # we run into a problem since we're doing this *before* drawing the head
+    # the value at L:HEAD_WRITE is some random instruction on the first loop
+    # I don't wanna overcomplicate this, so I'll first AND it with a write instruction
+    # that way even it now becomes a random write to 00 00, which we never jump back to
+    3A L:HEAD_WRITE
+    00 00 00
+    A0 03 00
+    B0 FF FF
+    A1 L:HEAD_WRITE
+    00 03 00
+
+    # now we do the copy
     CA L:HEAD_WRITE
     00 FE FA
     B0 FE FB
