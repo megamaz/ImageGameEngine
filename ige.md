@@ -91,3 +91,8 @@ L:weird FF
 Replaces all the pixels in the image with random pixels, for fun. Chances are this won't really have a use, but it's a good way to make sure that if the reader jumps out of bounds during execution, some interesting stuff can happen...
 
 You should put this at the start of your file, because this replaces *all pixels in the active image* with random pixels. So if you put it at the end, all of your code will be replaced.
+
+## INIT_GRADIENT
+Replaces all the pixels in the image with a UV gradient, useful for testing. Chances are you won't find much use for this, but it's good to know that it exists.
+
+The red value of this UV will be set to 0 to prevent running random bits of gradient as instructions.

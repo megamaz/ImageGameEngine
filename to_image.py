@@ -11,6 +11,7 @@ draw = ImageDraw.Draw(img)
 
 # INSTRUCTIONS
 # INIT_RANDOM (sets the entire screen to be random, for fun :) (you probably want this at the start of the file if you want to put code on top))
+# INIT_GRADIENT (sets the entire screen to be a UV gradient, useful for testing)
 # TO|x y (puts writer at address)
 # FILL|x y|x y|r g b (fills address)
 # PASS (advances writer without writing anything) 
@@ -111,6 +112,14 @@ for line in code:
     if l.startswith("INIT_RANDOM"):
         img = randomness.gen_random(sys.argv[2])
         draw = ImageDraw.Draw(img)
+        print("Replaced all pixels in image with random instructions.")
+        continue
+
+    elif l.startswith("INIT_GRADIENT"):
+        for y in range(256):
+            for x in range(256):
+                img.putpixel((x, y), (0, x, y))
+        print("Replaced all pixels in image with a UV gradient.")
         continue
 
     elif l.startswith("TO"):
