@@ -117,7 +117,7 @@ Copies a singular pixel to another.
 ## `0xD0`: Fill area
 Fills a square/rectangular area with a singular color. This wraps; it starts at the "top left", and works its way down and to the right, wrapping around the screen (if needed) until it reaches the "bottom right". 
 - `G_1`, `B_1`: The top left corner of the square.
-- `G_2`, `B_2`: The bottom right corner of the data to copy.
+- `G_2`, `B_2`: The bottom right corner of the square.
 - `R_3`, `G_3`, `B_3`: The value to fill with.
 
 ## `0x1_`: If
