@@ -172,11 +172,13 @@ def blit(rects:list=[]):
 
     to_pygame_screen_size = (screen_size*4, screen_size*4)
     if not forcefull and screen.get_size() != to_pygame_screen_size:
-        screen = pygame.display.set_mode(to_pygame_screen_size)
         if screen_size != 0:
+            screen = pygame.display.set_mode(to_pygame_screen_size)
             print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
         else:
             print("Screensize is 0, not blitting.")
+            if screen.get_size() != (1, 1):
+                screen = pygame.display.set_mode((1, 1))
             return
 
     if forcefull:
