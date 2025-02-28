@@ -524,9 +524,13 @@ while True:
         while True:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
-                sys.exit()
+                stop = True
+                break
             elif event.type == pygame.KEYDOWN and event.key == pygame.key.key_code("]") or event.type == pygame.TEXTINPUT and event.text == ']':
                 break
+    
+    if stop:
+        break
     
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
