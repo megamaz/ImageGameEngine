@@ -68,6 +68,8 @@ class Environment:
                                 pygame.MOUSEBUTTONUP: image.getpixel(tuple(self._get_address_offset(address, 2)))                                
                             }
                         )
+                        self.space[x][y] = self.mouse_click_reserved_address[-1][pygame.MOUSEBUTTONUP]
+
 
     def _get_address_offset(self, address, offset):
         orig_address = list(address)
@@ -545,8 +547,12 @@ while True:
         
         if event.type == pygame.MOUSEMOTION:
             screen_tleft = env.space[255][254][1:]
+            screen_size = env.space[254][254][1]
             mouse_pos = event.pos
             mouse_pos = (mouse_pos[0]//4, mouse_pos[1]//4)
+            # clamp mouse pos to prevent crashes
+            mouse_pos = (max(0, mouse_pos[0]), max(0, mouse_pos[1]))
+            mouse_pos = (min(screen_size-1, mouse_pos[0]), min(screen_size-1, mouse_pos[1]))
             mouse_pos = (mouse_pos[0] + screen_tleft[0], mouse_pos[1] + screen_tleft[1])
             value = (0, *mouse_pos)
             for address in env.mouse_pos_reserved_address:
