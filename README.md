@@ -167,7 +167,9 @@ Works the same as arithmetic operators, but does bitwise operations instead.
 Bitwise operations are:
 - `0x3A`: Logical AND
 - `0x3B`: Logical XOR
-- `0x3C`: Logical OR [DEFAULT]
+- `0x3C`: Logical OR
+- `0x3D`: Bitshift Left (bitshifts val1 by val2)
+- `0x3E`: Bitshift Right (bitshifts val1 by val2) [DEFAULT]
 
 
 # Registers
@@ -184,6 +186,21 @@ To control what value this pixel will change to when the key is released or pres
 - `R_3`, `G_3`, `B_3` is the value for when the key is RELEASED.
 
 These pixels are NOT reset when initalizing the state. The pixel will default to the RELEASED state.
+
+## Mouse Input
+Much like user input, you can reserve any pixel you want to be mouse input listeners. \
+For mouse position, you can reserve a specific pixel by placing down `(0xFF, 0x00, 0xBB)`. This pixel will become a mouse position listener, formatted as `(0x00, X, Y)`. \
+The exact `X` and `Y` position are relative to the top left of the screen. For instance, if the top left of the screen is at hex `(0xA0, 0xA0)` and the screen size is hex `0x05`, then if the mouse is in the top left of the screen, the pixel value will be `(0x00, 0xA0, 0xA0)` and if the mouse is in the bottom right of the screen, then the pixel value will be `(0x00, 0xA5, 0xA5)`.
+
+For clicks, the listener pixel is `(0xFF, 0xBB, 0x??)`. Only three values are accepted for the click type:
+- `0x0A` is left click.
+- `0x0B` is right click.
+- `0x0C` is middle click.
+
+The next two pixels work the same way as keybaord inputs:
+- `R_1`, `G_1`, `B_1` are the `0xFF`, `0xBB`, and mouse bytes respectively.
+- `R_2`, `G_2`, `B_2` is the value for when the mouse button is PRESSED.
+- `R_3`, `G_3`, `B_3` is the value for when the mouse button is RELEASED.
 
 ## Screen position
 The screen position is stored in `(0xFF, 0xFE)`. The pixel is stored in the format `(0x00, X, Y)`, with the point being the top left of the screen.

@@ -29,22 +29,46 @@ class Environment:
     def _initalize_space(self, image:Image.Image):
         print("Initalizing space...")
         self.reserved_keycodes = {}
+        self.mouse_pos_reserved_address = []
+        self.mouse_click_reserved_address = []
         for y in range(image.size[1]):
             for x in range(image.size[0]):
                 self.space[x][y] = image.getpixel((x, y))[:3]
+                address = [x, y]
 
                 # reserved keycodes
                 if np.array_equal(self.space[x][y][:2], (0xFF, 0xAE)):
                     print(f"Reserving keycode {self.space[x][y][2]} ('{pygame.key.name(self.space[x][y][2])}') at ({x}, {y})")
-                    address = [x, y]
                     self.reserved_keycodes[self.space[x][y][2]] = {
                         "address": (x, y),
                         pygame.KEYDOWN: image.getpixel(tuple(self._get_address_offset(address, 1))),
                         pygame.KEYUP: image.getpixel(tuple(self._get_address_offset(address, 2)))
                     }
                     self.space[x][y] = self.reserved_keycodes[self.space[x][y][2]][pygame.KEYUP]
+                
+                # reserved mouse
+                if np.array_equal(self.space[x][y], (0xFF, 0x00, 0xBB)):
+                    print(f"Reserving mouse position at ({x}, {y})")
+                    self.mouse_pos_reserved_address.append(list(address))
+                
+                # mouse input
+                if np.array_equal(self.space[x][y][:2], (0xFF, 0xBB)):
+                    # pygame mouse input doesn't match my method
+                    # 0x0A is left click, pygame button 1
+                    # 0x0B is right click, pygame button 3
+                    # 0x0C is middle click, pygame button 2
+                    button = self.space[x][y][2]
+                    if button in [0x0A, 0x0B, 0x0C]:
+                        print(f"Reserving mouse click '{button}' at ({x}, {y})")
+                        self.mouse_click_reserved_address.append(
+                            {
+                                "address":address,
+                                "button":({0x0A:1, 0x0B:3, 0x0C:2})[button],
+                                pygame.MOUSEBUTTONDOWN: image.getpixel(tuple(self._get_address_offset(address, 1))),
+                                pygame.MOUSEBUTTONUP: image.getpixel(tuple(self._get_address_offset(address, 2)))                                
+                            }
+                        )
 
-    
     def _get_address_offset(self, address, offset):
         orig_address = list(address)
         orig_address[0] = (orig_address[0] + ((orig_address[1] + offset)//256)) % 256
@@ -460,7 +484,7 @@ while True:
                 rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3+3], (0, 0, 0)))
             # continue
 
-        case 0x3A | 0x3B | 0x3C: # BITWISE
+        case 0x3A | 0x3B | 0x3C | 0x3D | 0x3E: # BITWISE
             target = pixel[1:]
             padding = env.get_pixel(pointer, 1)[1]
             padding_val = env.get_pixel(pointer, 1)[2]
@@ -474,9 +498,14 @@ while True:
             elif pixel[0] == 0x3B:
                 result = val1 ^ val2
             
-            # elif pixel[0] == 0x3C:
-            else:
+            elif pixel[0] == 0x3C:
                 result = val1 | val2
+            
+            elif pixel[0] == 0x3D:
+                result = val1 << val2
+
+            else:
+                result = val1 >> val2
             
             try:
                 b_result = result.to_bytes((len(hex(result)[2:])//2))
@@ -513,6 +542,22 @@ while True:
             if event.key in env.reserved_keycodes.keys():
                 env.set_pixel(env.reserved_keycodes[event.key]["address"], env.reserved_keycodes[event.key][event.type])
                 print("Reserved keycode event detected")
+        
+        if event.type == pygame.MOUSEMOTION:
+            screen_tleft = env.space[255][254][1:]
+            mouse_pos = event.pos
+            mouse_pos = (mouse_pos[0]//4, mouse_pos[1]//4)
+            mouse_pos = (mouse_pos[0] + screen_tleft[0], mouse_pos[1] + screen_tleft[1])
+            value = (0, *mouse_pos)
+            for address in env.mouse_pos_reserved_address:
+                env.set_pixel(address, value)
+        
+        if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]:
+            print("Reserved mouse event detected")
+            for button in env.mouse_click_reserved_address:
+                if event.button == button['button']:
+                    env.set_pixel(button['address'], button[event.type])
+
     else:
         stop = False
     

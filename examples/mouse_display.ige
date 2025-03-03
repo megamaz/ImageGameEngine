@@ -1,0 +1,40 @@
+# setup initial state
+TO|FE FE # screen size
+00 40 00
+TO|FF FE # screen position
+00 00 00
+FILL|00 FF|FF FF|00 00 00 # clear call stack
+
+# jump to main loop
+TO|00 00
+40 51 51
+
+# mouse position store
+TO|FF 00
+FF 00 BB
+
+
+# main loop
+TO|51 51
+    # or with a write instruction
+    3C L:DRAW_MOUSE
+    00 00 00
+    A1 FF 00
+    00 03 00
+    A0 03 00
+    B0 00 00
+    LABEL|DRAW_MOUSE
+    FF FF FF # mouse color
+
+    # copy the instruction just ahead to erase the pixel
+    CA L:DRAW_MOUSE
+    00 L:CLEAR_MOUSE
+
+    # blit
+    BB 00 00
+
+    LABEL|CLEAR_MOUSE
+    00 00 00
+
+    # reset loop
+    40 51 51
