@@ -41,6 +41,8 @@ This does not wrap around and can cause OOB errors.
 Teleports the writer to the specified location without writing anything. The next raw line will write *at* XX YY.
 
 ## FILL|X1 Y1|X2 Y2|RR GG BB
+This command does not advance the writer.
+
 Fills the entire area from X1 Y1 to X2 Y2 with a solid color. 
 
 This can be useful if, for example, you want to prevent the screen from being executed as code, by placing an offset or goto instruction along the top of the entire screen.
@@ -49,12 +51,41 @@ This can be useful if, for example, you want to prevent the screen from being ex
 Doesn't take any parameters. This advances the writer without writing anything. Can be useful if the current address is being written to.
 
 ## IMPORT|XX YY|filename
+This command doesn't advance the writer.
+
 Imports an image, with the top left of the image being positioned at XX YY. This is useful if you want to import assets for your game.
 
 The imported image supports alpha, and any pixel that isn't fully opaque will be skipped. So, if your pixel has even the slightest transparency, it will be skipped.
 
+If you want to import code (as in, an image smaller than 256x256 that contains pixels that can be treated as code) then you should make use of the `PATCH`, `ATLABEL`, and `REL` commands in order to ensure that all the pixel references are correct. For instance, if you want to import code where one of the pixels is a `BRANCH` instruction like `EF 12 34` but you import the code at `A0 A0`, then the branch instruction won't jump to the right address, and the behaviour will be undefined.
+
+Instead, if you want to import code, you'll need to have an import followed by a rel command and a series of patch and label commands, which might look something like this:
+```
+IMPORT|A0 A0|code.png
+REL|A0 A0
+ATLABEL|12 34|func_1
+PATCH|00 05|EF L:func_1
+# more label and patch commands...
+ENDREL
+```
+
+## REL|XX YY and ENDREL
+These commands don't advance the writer.
+
+These commands are for relative instructions. It changes the top left position to be the position defined by the REL command. This is mainly useful for the `IMPORT` command, however this can also be useful for code organization.
+
+The ENDREL command resets the relative position to be 00 00 without moving the writer. This means that if your last REL command was `REL|A0 A0` and the current writer position was `0x05 0x05`, then doing `ENDREL` would leave the writer at `A5 A5` (0xA0 + 0x05)
+
+## PATCH|XX YY|RR GG BB
+This command doesn't advance the writer.
+
+Replaces a pixel at XX YY. This is useful if you want to write to a pixel without moving the writer to it.
+
+
 ## LABEL|name
-Creates a label. This is solely for image writing purposes. To reference a label, you do `L:name`.
+This command advances the writer.
+
+Creates a label at the current writer position. This is solely for image writing purposes. To reference a label, you do `L:name`.
 
 Label creation line will act like a PASS command, advancing the writer without writing anything. If you want to use the LABEL creation line rather than leaving it blank, then you can follow the label creation line with the `TO| X Y-` command to move the writer one pixel up.
 
@@ -87,12 +118,37 @@ LABEL|weird
 L:weird FF
 ```
 
+All commands support label usage, except for the `TO` command. This is because the label position relies on the position of the writer, and if the position of the writer relies on a label, this creates a circular dependency.
+
+Label references *are* affected by the REL command.
+
+## ATLABEL|XX YY|NAME
+This command does't advance the writer.
+
+Creates a label that references a specific memory address. Everything about this label works the same as above.
+
+This can be useful if you want to create variables. For instance, if you store a specific variable at a specific address, then instead of doing something like this:
+```
+TO|FF 00
+01 00 00
+```
+Which simply sets the pixel, and then you have to keep track of it manually, you can do this:
+```
+ATLABEL|FF 00|my_var
+PATCH|FF 00|01 00 00
+```
+
+
 ## INIT_RANDOM
+This command doesn't advance the writer.
+
 Replaces all the pixels in the image with random pixels, for fun. Chances are this won't really have a use, but it's a good way to make sure that if the reader jumps out of bounds during execution, some interesting stuff can happen...
 
 You should put this at the start of your file, because this replaces *all pixels in the active image* with random pixels. So if you put it at the end, all of your code will be replaced.
 
 ## INIT_GRADIENT
+This command doesn't advance the writer.
+
 Replaces all the pixels in the image with a UV gradient, useful for testing. Chances are you won't find much use for this, but it's good to know that it exists.
 
 The red value of this UV will be set to 0 to prevent running random bits of gradient as instructions.

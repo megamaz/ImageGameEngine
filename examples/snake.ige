@@ -1,32 +1,33 @@
-INIT_RANDOM
-
 # setup initial state
-TO|FE FE
-00 40 00
-TO|FF FE
-00 00 00
-FILL|00 00|40 00|40 41 41 # prevent running screen as code
+PATCH|FE FE|00 40 00
+PATCH|FF FE|00 00 00
 FILL|00 FF|FF FF|00 00 00 # clear call stack
+FILL|00 00|40 00|40 41 41 # prevent running screen as code
 
 FILL|41 41|50 50|00 00 00 # clear code area
 FILL|FE 00|FE FD|00 00 00 # clear body stack
 
 # VAR:HEAD_POS at FF 00
-TO|FF 00
-00 20 20
+ATLABEL|FF 00|HEAD_POS
+PATCH|FF 00|00 20 20
+
 # VAR:APPLE_POS at FF 01
-00 25 25
+ATLABEL|FF 01|APPLE_POS
+PATCH|FF 01|00 25 25
 
 # VAR:BODY_LENGTH at FE 00
-TO|FE 00
-01 00 00
+ATLABEL|FE 00|BODY_LENGTH
+PATCH|FE 00|01 00 00
 
-TO|FE FC # since the body is stored as a series of write instructions, go back
-40 L:after_draw
+# since the body is stored as a series of write instructions, put an instruction to go back
+PATCH|FE FC|40 L:after_draw
 # everything FE 01 and below is body position values
 
 # main loop
-TO|41 41
+# this REL command isn't truly useful, it's just there to test that it works
+REL|41 41
+TO|00 00
+ENDREL
     # clear the screen
     D0 00 01
     00 40 40
@@ -37,16 +38,16 @@ TO|41 41
     00 00 00
     A0 03 00
     B0 00 00
-    A1 FF 01 # APPLE_POS
+    A1 L:APPLE_POS
     00 03 00
     LABEL|APPLE_WRITE
     69 0D 0D # apple color
 
     1A L:not_eaten # IF head and apple are (not) in same spot
     00 42 41 # 42 41 is where I put the function for eating an apple
-    A1 FF 00 # head pos
+    A1 L:HEAD_POS
     00 03 00
-    A1 FF 01 # apple pos
+    A1 L:APPLE_POS
     00 03 00
     LABEL|not_eaten
     TO| X Y-
@@ -66,7 +67,7 @@ TO|41 41
     # first do body_length * 2 to properly subtract
     2B EA 00
     00 00 00
-    A1 FE 00
+    A1 L:BODY_LENGTH
     00 01 00
     A0 01 00
     02 00 00
@@ -81,7 +82,7 @@ TO|41 41
     3C FE 01
     00 00 00
     A0 03 00
-    40 FE 00
+    40 L:BODY_LENGTH
     A1 FA 00
     00 03 00
 
@@ -116,7 +117,7 @@ TO|41 41
     00 00 00
     A0 03 00
     B0 00 00
-    A1 FF 00 # HEAD_POS
+    A1 L:HEAD_POS
     00 03 00
     LABEL|HEAD_WRITE
     FF 00 00 # head color
@@ -156,9 +157,9 @@ TO|42 41
     # add to length of body
     # length of body is stored at FE 00
     # so we do whatever is at FE 00 + 1 and store it at FE 00
-    2A FE 00
+    2A L:BODY_LENGTH
     00 00 00
-    A1 FE 00
+    A1 L:BODY_LENGTH
     00 01 00
     A0 01 00
     01 00 00
@@ -167,7 +168,7 @@ TO|42 41
     # pretty arbitrary number, but creates good "random" movement after the modulo
     2A E1 00
     00 01 00
-    A1 FF 01
+    A1 L:APPLE_POS
     00 03 00
     A0 03 00
     00 12 34
@@ -198,7 +199,7 @@ TO|42 41
     40 00 00
 
     # OR the two together and that's the new apple pos
-    3C FF 01
+    3C L:APPLE_POS
     00 01 00
     A1 E4 00
     00 03 00
@@ -211,9 +212,9 @@ TO|42 41
 # move body functions
 TO|43 41
     # up 
-    2D FF 00
+    2D L:HEAD_POS
     00 01 00
-    A1 FF 00
+    A1 L:HEAD_POS
     00 03 00
     A0 01 00
     01 00 00
@@ -223,9 +224,9 @@ TO|43 41
 
 TO|44 41
     # left
-    2D FF 00
+    2D L:HEAD_POS
     00 01 00
-    A1 FF 00
+    A1 L:HEAD_POS
     00 03 00
     A0 02 00
     01 00 00
@@ -237,9 +238,9 @@ TO|45 41
     # for fun, we don't care about wrapping :D
     # the reason I'm saying this is fun is because that means the snake can sneakily enter the game code, and start overwriting a bunch of useful data.
     # this usually ends up in a softlock, but it's still fun nonetheless.
-    2A FF 00
+    2A L:HEAD_POS
     00 01 00
-    A1 FF 00
+    A1 L:HEAD_POS
     00 03 00
     A0 01 00
     01 00 00
@@ -248,9 +249,9 @@ TO|45 41
 
 TO|46 41
     # right
-    2A FF 00
+    2A L:HEAD_POS
     00 01 00
-    A1 FF 00
+    A1 L:HEAD_POS
     00 03 00
     A0 02 00
     01 00 00
