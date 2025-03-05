@@ -6,7 +6,7 @@
 TO|FE FE
 00 40 00
 TO|FF FE
-00 10 00
+00 00 00
 FILL|00 00|40 00|40 41 41 # prevent running screen as code
 FILL|00 FF|FF FF|00 00 00 # clear call stack
 
