@@ -3,37 +3,34 @@
 
 INIT_RANDOM # just to show off that if you code correctly, random oob code shouldn't be executed
 # setup initial state
-TO|FE FE # screen size
-00 $64 00
-TO|FF FE # screen position
-00 00 01
+PATCH|FE FE|00 $64 00 # screen size
+PATCH|FF FE|00 00 01 # screen position
 FILL|00 FF|FF FF|00 00 00 # clear call stack
-FILL|00 00|$64 00|40 50 50 # prevent running screen as code
 
 # keep track of current color
-TO|FF 00
-00 00 00
+PATCH|FF 00|00 00 00
+ATLABEL|FF 00|COLOR
 
 # MAIN LOOP
 TO|50 50
 
 # add FE to color
-2A FF 00
+2A L:COLOR
 00 00 00
-A1 FF 00
+A1 L:COLOR
 00 03 00
 A0 01 00
 FE 00 00
 
 # fill screen with color
 # start by copying color just ahead
-CA FF 00
-00 L:color
+CA L:COLOR
+00 L:COLOR_FILL
 
 # now do the fill
 D0 00 01
 00 $65 $65
-LABEL|color
+LABEL|COLOR_FILL
 
 # blit
 BB 00 00

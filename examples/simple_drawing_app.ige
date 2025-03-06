@@ -3,20 +3,16 @@
 # right click = select color
 
 # setup initial state
-TO|FE FE
-00 40 00
-TO|FF FE
-00 00 00
-FILL|00 00|40 00|40 41 41 # prevent running screen as code
+PATCH|FE FE|00 40 00 # screen size
+PATCH|FF FE|00 00 00 # screen position
 FILL|00 FF|FF FF|00 00 00 # clear call stack
 
 # store mouse position
-TO|FF 00
-FF 00 BB
+PATCH|FF 00|FF 00 BB
+ATLABEL|FF 00|MOUSE_POS
 
 # jump to main loop
-TO|00 00
-40 51 51
+PATCH|00 00|40 51 51
 
 # import the palette
 IMPORT|A0 00|palette.png
@@ -61,7 +57,7 @@ TO|52 51 # mouse draw function
     00 00 00
     A0 03 00
     B0 00 00
-    A1 FF 00
+    A1 L:MOUSE_POS
     00 03 00
 
     # clone mouse color
@@ -81,7 +77,7 @@ TO|53 51
     00 00 00
     A0 03 00
     CA 00 00
-    A1 FF 00
+    A1 L:MOUSE_POS
     00 03 00
 
     LABEL|MOUSE_CLONE

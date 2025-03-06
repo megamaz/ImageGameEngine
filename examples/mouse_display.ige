@@ -1,25 +1,21 @@
 # setup initial state
-TO|FE FE # screen size
-00 40 00
-TO|FF FE # screen position
-00 00 00
+PATCH|FE FE|00 40 00 # screen size
+PATCH|FF FE|00 00 00 # screen position
 FILL|00 FF|FF FF|00 00 00 # clear call stack
 
 # jump to main loop
-TO|00 00
-40 51 51
+PATCH|00 00|40 51 51
 
 # mouse position store
-TO|FF 00
-FF 00 BB
-
+PATCH|FF 00|FF 00 BB
+ATLABEL|FF 00|MOUSE_POS
 
 # main loop
 TO|51 51
     # or with a write instruction
     3C L:DRAW_MOUSE
     00 00 00
-    A1 FF 00
+    A1 L:MOUSE_POS
     00 03 00
     A0 03 00
     B0 00 00
