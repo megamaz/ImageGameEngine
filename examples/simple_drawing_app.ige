@@ -35,6 +35,7 @@ TO| X Y-
     C0 A0 00
     00 A4 40
     00 3C 00
+    12 34 56 # mask isn't a color in the palette
 
     # draw on mouse click
     FF BB 0A

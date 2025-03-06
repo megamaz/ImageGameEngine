@@ -61,6 +61,7 @@ ENDREL
     C0 FE 03
     00 FE FB
     00 FE 01
+    00 00 00
 
     # to only draw the correct body length, we'll write in a jump at FE 01 
     # value of the jump will be at FA 00, we'll then OR it with FE 00
