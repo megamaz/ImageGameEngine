@@ -110,6 +110,7 @@ Copies an area to another area.
 - `G_1`, `B_1`: The top left corner of the data to copy.
 - `G_2`, `B_2`: The bottom right corner of the data to copy.
 - `G_3`, `B_3`: The top left target corner.
+- `R_4`, `G_4`, `B_4`: The mask color. any pixel with this exact color will not be copied over to the target.
 
 ## `0xCA`: Copy Value
 Copies a singular pixel to another.
