@@ -74,7 +74,7 @@ These commands don't advance the writer.
 
 These commands are for relative instructions. It changes the top left position to be the position defined by the REL command. This is mainly useful for the `IMPORT` command, however this can also be useful for code organization.
 
-The ENDREL command resets the relative position to be 00 00 without moving the writer. This means that if your last REL command was `REL|A0 A0` and the current writer position was `0x05 0x05`, then doing `ENDREL` would leave the writer at `A5 A5` (0xA0 + 0x05)
+The ENDREL command resets the relative position to be 00 00 without moving the writer. This means that if your last REL command was `REL|A0 A0` and the current writer position was `0x05 0x05`, then doing `ENDREL` would leave the writer at `A5 A5` (0xA0 + 0x05). This is *NOT* the same as doing `REL|00 00`, as a `REL` command actually moves the writer with it. What that means is that if your last `REL` command was `REL|B0 B0` and the writer is currently at `0F 0F`, meaning when writing the writer will be writing to `BF BF`, then doing `REL|00 00` will now make the writer write to `0F 0F`. If you want to keep the writer's current absolute position, then use an `ENDREL` command.
 
 ## PATCH|XX YY|RR GG BB
 This command doesn't advance the writer.
@@ -120,7 +120,16 @@ L:weird FF
 
 All commands support label usage, except for the `TO` command. This is because the label position relies on the position of the writer, and if the position of the writer relies on a label, this creates a circular dependency.
 
-Label references *are* affected by the REL command.
+When mixing with the REL command, keep in mind that label references are absolute, whereas their creation is relative. For example, if you have the following code:
+```
+REL|A0 A0
+ATLABEL|05 05|my_label
+```
+Then the label `my_label` will be created relative to `A0 A0`, which in this scenario is `A5 A5`. If, later down the line, you reference this label, for instance by doing something like this:
+```
+PATCH|12 34|40 L:my_label
+```
+Then the reference to `my_label` will be absolute. This means the line will be interpreted as `PATCH|12 34|40 a5 a5`. This behavior perists after the `ENDREL` command (that is to say that label references are *always* absolute, but their creation is relative.)
 
 ## ATLABEL|XX YY|NAME
 This command does't advance the writer.
