@@ -64,6 +64,14 @@
 				{
 					"name":"variable.language.ige",
 					"match": "\\bFF AE\\b"
+				},
+				{
+					"name":"variable.language.ige",
+					"match": "\\bFF BB\\b"
+				},
+				{
+					"name":"variable.language.ige",
+					"match": "\\bFF 00 BB\\b"
 				}
 			]
 		}
