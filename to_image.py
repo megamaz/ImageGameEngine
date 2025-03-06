@@ -181,10 +181,10 @@ for line in code:
 
     elif l.startswith("PATCH"):
         values = l.split("|")[1].split(" ")
-        x = get_value(values[0]) + rel_x
-        y = get_value(values[1]) + rel_y
+        x_target = get_value(values[0]) + rel_x
+        y_target = get_value(values[1]) + rel_y
         color = tuple([get_value(v) for v in l.split("|")[2].split(" ")])
-        img.putpixel((x, y), color)
+        img.putpixel((x_target, y_target), color)
         print(f"Replaced singular pixel at {hex(x)}, {hex(y)} with {color}")
         continue
     
