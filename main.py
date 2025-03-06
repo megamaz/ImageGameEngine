@@ -101,19 +101,8 @@ class Environment:
         Assumes that the address is the pixel pointed to by the 0xA1 pixel."""
         value = b''
         for o in range(-(length//-3)):
-            value += bytes([x for x in self.get_pixel(address, o + offset)])
-        
-        # some extra bytes from the pixel were included
-        # this is annoying, eally annoying because that means that an arithmetic instruction stores a result of 1 like this:
-        # 01 00 00
-        # but the program reads it like this:
-        # 0x10000
-        # so this patches that, as it is unintended behavior
-        if length % 3 != 0:
-            # if it's 1, then there's two extra bytes: G and B
-            # if it's 2, then there's one extra byte: just B
-            remove = 3 - (length % 3)
-            value = value[:-remove]
+            value += bytes([x for x in self.get_pixel(address, o)])
+        value = value[offset:offset+length]
         
         return int.from_bytes(value)
     
@@ -126,8 +115,9 @@ class Environment:
         
         elif pixel[0] == 0xA1: # VARIABLE mode
             target = pixel[1:]
-            length = self.get_pixel(address, 1)[1]
-            offset = self.get_pixel(address, 1)[2]
+            params = self.get_pixel(address, 1)
+            length = params[1]
+            offset = params[2]
             return self.get_variable(target, length, offset)
         
         return 0
