@@ -1,0 +1,187 @@
+# renders some (pre-set) text
+# 00 is space, 1 is A, 2 is B, etc
+
+# setup initial state
+PATCH|FE FE|00 50 00 # screen size
+PATCH|FF FE|00 00 00 # screen position
+FILL|00 FF|FF FF|00 00 00 # clear call stack
+
+# give our code space
+FILL|51 51|53 A0|00 00 00
+
+# jump to render loop
+PATCH|00 00|40 52 51
+
+# VARIABLES
+# character index at 51 51
+PATCH|51 51|00 00 00
+ATLABEL|51 51|CHAR_INDEX
+
+# font index
+ATLABEL|51 52|FONT_INDEX
+
+# temp var, pixel index
+ATLABEL|51 53|PIXEL_INDEX
+
+# temp var, pixel offset
+ATLABEL|51 54|PIXEL_OFFSET
+
+# temp var, target draw
+ATLABEL|51 55|CHAR_TARGET
+
+# import our font file
+# every character is 7-wide, 6-tall
+# put at 07 so that 00 is a space
+IMPORT|07 A0|font.png
+
+# make space character be white
+FILL|00 A0|06 A6|FF FF FF
+
+# write out our text
+# "Hello World"
+# FF is a string terminator
+TO|FF 00
+08 05 0C
+0C 0F 00
+17 0F 12
+0C 04 FF
+
+# render loop
+# I'll keep 51 51 and below for variables
+TO|52 51
+# initial screen setup
+D0 00 00
+00 F0 41
+FF FF FF
+
+    LABEL|MAIN_LOOP_START
+    # reset our temp variables
+    D0 51 52
+    00 51 60
+    00 00 00
+    # render currently indexed character
+    # want a C0 instruction that indexes the correct character, and renders to the correct position
+    
+    # to get the proper index, it's charindex//3 and the offset is charindex%3
+    2C L:PIXEL_INDEX # division
+    00 00 00
+    A1 L:CHAR_INDEX
+    00 01 00
+    A0 01 00
+    03 00 00
+
+    2E L:PIXEL_OFFSET # modulo
+    00 00 00
+    A1 L:CHAR_INDEX
+    00 01 00
+    A0 01 00
+    03 00 00
+
+
+    # generate an A1 instruction
+    # we want 
+    # A1 FF [correct pixel index]
+    # 00 01 [pixel offset]
+
+    # generate the first line
+    3C L:PROP_PIXEL_INDEX
+    00 00 00
+    A0 03 00
+    A1 FF 00
+    A1 L:PIXEL_INDEX
+    00 01 00
+
+    # generate the second line
+    3C L:PROP_PIXEL_OFFSET
+    00 01 00
+    A0 03 00
+    00 01 00
+    A1 L:PIXEL_OFFSET
+    00 01 00
+
+    # if we reach a string terminator, then we end the loop
+    1A L:IF_END
+    00 L:LOOP_END
+    A0 01 00
+    FF 00 00
+    LABEL|PROP_PIXEL_INDEX
+    LABEL|PROP_PIXEL_OFFSET
+    
+    LABEL|IF_END
+    TO| X Y-
+
+    # if we aren't, then we do a quick clone of the A1
+    CA L:PROP_PIXEL_INDEX
+    00 L:PROP_PIXEL_CLONE1
+    CA L:PROP_PIXEL_OFFSET
+    00 L:PROP_PIXEL_CLONE2
+
+    # code is split in half lol
+    40 53 51
+    TO|53 51
+
+    # correct character = 7 * char value
+    2B L:FONT_INDEX
+    00 00 00 # no padding
+    A0 01 00
+    07 00 00
+    LABEL|PROP_PIXEL_CLONE1
+    LABEL|PROP_PIXEL_CLONE2
+
+    # target draw position = 7 * index
+    2B L:CHAR_TARGET
+    00 00 00
+    A0 01 00
+    07 00 00
+    A1 L:CHAR_INDEX
+    00 01 00
+
+    # ok now we draw
+    # we want
+    # C0 [font index] A0
+    # 00 [font index+6] A5
+    # 00 [char target] 00
+    3C L:DRAW_FIRSTLINE
+    00 00 00
+    A0 03 00
+    C0 00 A0
+    A1 L:FONT_INDEX
+    00 02 00
+
+    # second line needs an add. we can do this all in a single instruction!
+    2A L:DRAW_SECONDLINE
+    00 01 00
+    A0 02 00
+    06 A5 00
+    A1 L:FONT_INDEX
+    00 02 00
+
+    3C L:DRAW_THIRDLINE
+    00 01 00
+    A0 01 00
+    00 00 00
+    A1 L:CHAR_TARGET
+    00 01 00
+
+    # run the draw
+    LABEL|DRAW_FIRSTLINE
+    LABEL|DRAW_SECONDLINE
+    LABEL|DRAW_THIRDLINE
+    12 34 56 # no mask
+
+    # increment char index
+    2A L:CHAR_INDEX
+    00 00 00
+    A0 01 00
+    01 00 00
+    A1 L:CHAR_INDEX
+    00 01 00
+
+    # blit
+    BB 00 00
+
+    # reset main loop
+    40 L:MAIN_LOOP_START
+
+    LABEL|LOOP_END
+    EE 00 00
