@@ -17,7 +17,7 @@ PATCH|FF 01|00 25 25
 
 # VAR:BODY_LENGTH at FE 00
 ATLABEL|FE 00|BODY_LENGTH
-PATCH|FE 00|01 00 00
+PATCH|FE 00|00 00 00
 
 # since the body is stored as a series of write instructions, put an instruction to go back
 PATCH|FE FC|40 L:after_draw
@@ -147,8 +147,8 @@ ENDREL
     LABEL|after_move # useful return point (again)
     TO| X Y-
 
-    # blit
-    BB 00 00
+    # blit at 15fps (makes snake easier to control)
+    BB 00 $15
 
     # return to start of loop
     40 41 41

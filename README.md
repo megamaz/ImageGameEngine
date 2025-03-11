@@ -137,6 +137,10 @@ Afterwards, the instruction will parse the next pixels as either value / variabl
 
 ## `0xBB`: Blit
 Renders the screen.
+- `B_1`: The FPS for this blit.
+If this is 0, then it'll render without pause. Any other number will wait `1/val` seconds AFTER rendering the image.
+
+Keep in mind that the `speed` argument in the main.py will override this. The `forcefull` argument will also disable this.
 
 ## `0xEF`: Branch to
 Jumps instruction to the given address, and appends the address of this instruction to the [branch stack](#branch-stack). Or rather, it searches for the right-most null value, and replaces it with the current address. If the stack is full, the last value in the stack will be overwritten.

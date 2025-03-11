@@ -181,7 +181,7 @@ def draw_bleeding_rect(tleft, size, debug_color=(255, 255, 255)):
 
     return do
 
-def blit(rects:list=[]):
+def blit(rects:list=[], pause=0):
     global screen
     if pixel[0] == 0xBB:
         print("Blit instruction ran")
@@ -238,6 +238,9 @@ def blit(rects:list=[]):
     if speed is not None:
         clock.tick(speed)
     
+    elif pause != 0:
+        clock.tick(pause)
+    
     pygame.display.flip()
 
 pixel = [0, 0, 0]
@@ -288,7 +291,8 @@ while True:
 
         case 0xBB: # BLIT
             if not forcefull: #forcefull is already rendering every frame, so this wastes time otherwise
-                blit()
+                p_time = pixel[2]
+                blit(pause=p_time)
                 
         case 0xB0: # WRITE
             target = pixel[1:]
