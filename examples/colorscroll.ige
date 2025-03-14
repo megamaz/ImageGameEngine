@@ -11,6 +11,8 @@ FILL|00 FF|FF FF|00 00 00 # clear call stack
 PATCH|FF 00|00 00 00
 ATLABEL|FF 00|COLOR
 
+PATCH|00 00|40 50 50 # jump to main loop
+
 # MAIN LOOP
 TO|50 50
 
