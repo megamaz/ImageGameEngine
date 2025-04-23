@@ -376,6 +376,7 @@ while True:
             target = env.get_pixel(pointer, 1)[1:]
 
             print(f"Copy instruction, copied {source} at {target}")
+            pointer = env._get_address_offset(pointer, 1)
             env.set_pixel(target, env.get_pixel(source))
 
         case 0x1A | 0x1B: # IF
