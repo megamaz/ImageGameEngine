@@ -110,13 +110,19 @@ for line in code:
     l = l.replace(" Y", hex(y)[2:])
 
     # replace labels
-    if "L:" in l:
+    while "L:" in l:
         # get label
-        contents = l.split(" ")
-        label_index = [1 if k.startswith("L:") else 0 for k in contents].index(1)
-        label_name = contents[label_index].split(":")[1]
-        coords = label_coords[label_name]
-
+        try:
+            contents = l.split(" ")
+            label_index = [1 if k.startswith("L:") else 0 for k in contents].index(1)
+            label_name = contents[label_index].split(":")[1]
+            coords = label_coords[label_name]
+        except ValueError:
+            # label must be in between pipes
+            contents = l.split("|")
+            label_index = [1 if k.startswith("L:") else 0 for k in contents].index(1)
+            label_name = contents[label_index].split(":")[1]
+            coords = label_coords[label_name]
         # replace (label references are affected by REL)
         l = l.replace(f"L:{label_name}", f"{hex(coords[0]+rel_x)[2:]} {hex(coords[1]+rel_y)[2:]}")
         print(f"Replaced L:{label_name} with `{hex(coords[0])[2:]} {hex(coords[1])[2:]}`")
