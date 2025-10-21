@@ -45,6 +45,16 @@ The available parameters for main.py are:
 - `debug` Logs to the console every instruction that gets ran, as well as some info about the instruction and pointer position when relevant.
 - `stepping` Pauses execution and allows you to step instruction-per-instruction through the process. To step one instruction forward, use the `]` key.
 - `speed [x]` The `[x]` parameter needs to be an integer above 1. It will force the game to run at that FPS, rather than as fast as it can run. There *needs* to be a space after the word `speed` to properly parse it.
+- `watch [watch config path]` Allows you to watch certain pixels. Will print out their value after every step of the pointer.
+
+### watch config format
+Separated by newlines, and every line must be formatted like this: `NAME:ADDRESS`. The address must be two bytes written in hex.
+
+For instance, if you have a variable at `FE 01` to store your player's position, and one at `FE 02` for their speed, you would write that in the file like this:
+```
+Player pos:FE 01
+Player speed:FE 02
+```
 
 ### `get_keycode.py`
 Simply run it, press the key you want, and it'll print out the hex keycode in the console for you to use in your project.

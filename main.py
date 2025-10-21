@@ -16,6 +16,18 @@ forcefull = "forcefull" in sys.argv
 debug = "debug" in sys.argv
 showpointer = "showpointer" in sys.argv
 stepping = "stepping" in sys.argv
+watch = None
+if "watch" in sys.argv:
+    watch = []
+    debug_path = sys.argv[sys.argv.index("watch")+1]
+    with open(debug_path, "r", encoding="utf-8") as watch_f:
+        for var in watch_f.read().splitlines():
+            name = var.split(":")[0]
+            address_str = var.split(":")[1].split(" ")
+            address_x = int(address_str[0], 16)
+            address_y = int(address_str[1], 16)
+            watch.append((name, (address_x, address_y)))
+
 speed = None
 if "speed" in sys.argv:
     speed = int(sys.argv[sys.argv.index("speed")+1])
@@ -267,7 +279,12 @@ while True:
     pointer = list(pointer)
     pixel = env.get_pixel(pointer)
     rects = []
-    
+
+    if watch is not None:
+        for d in watch:
+            sys.stdout.write(f"{d[0]:<15} {env.get_pixel(list(d[1]))}\n")
+        sys.stdout.write("-------\n")
+
     # instructions
     match pixel[0]:
 
