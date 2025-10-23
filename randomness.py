@@ -1,7 +1,8 @@
 from PIL import Image, ImageDraw
 import random
 
-instructions = [
+instructions = sorted([
+    0x00,
     0x50,
     0x40,
     0xA1,
@@ -21,7 +22,7 @@ instructions = [
     0x3A,
     0x3B,
     0x3C,
-]
+])
 
 def gen_random(out_file) -> Image:
     img = Image.new("RGB", (256, 256))

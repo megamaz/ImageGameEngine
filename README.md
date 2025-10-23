@@ -78,6 +78,13 @@ Takes two parameters:
 
 The output is formatted as `address: code`. 
 
+### `simplifier.py`
+Takes in a 256x256 image and reduces the Red color space to be instructions only. To get more fun result, I recommend you go into `randomness.py` and comment out `0xEE`, `0xEF`, and `0xD0`.
+
+Takes two parameters:
+1. Path to input png
+2. Path to output png
+
 # Instructions
 The list of instructions. They'll be written in hex (`0x00` to `0xFF`).
 
