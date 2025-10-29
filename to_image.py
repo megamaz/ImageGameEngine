@@ -1,13 +1,18 @@
 from PIL import Image, ImageDraw
+import custom_logger
 import randomness
 import sys
+
+logging = custom_logger.setup_logging("_latest_to_image.log")
 
 print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
 
 code = open(sys.argv[1], "r").read().splitlines()
+logging.info("Loaded IGE file")
 
 img = Image.new("RGB", (256, 256))
 draw = ImageDraw.Draw(img)
+logging.info("Prepared output image")
 
 def get_value(string:str):
     if string.startswith("$"):
@@ -16,7 +21,7 @@ def get_value(string:str):
         return int(string, 16)
 
 # first pass to do labels
-print("\n\nInitial label creation")
+logging.info("Setting up labels")
 x, y = 0, 0
 rel_x, rel_y = 0, 0
 label_coords = {}
@@ -42,21 +47,26 @@ for line in code:
         values = l.split("|")[1].split(" ")
         x = get_value(values[0])
         y = get_value(values[1])
-        print(f"Jumped writer to {hex(x)}, {hex(y)} relative to {hex(rel_x)}, {hex(rel_y)}")
+        logging.debug(f"Jumped writer to {hex(x)}, {hex(y)} relative to {hex(rel_x)}, {hex(rel_y)}")
         continue
 
     elif l.startswith("LABEL"):
         name = l.split("|")[1]
+        if (x+rel_x, y+rel_y) in list(label_coords.values()):
+            dupe = next((k for k, v in label_coords.items() if v == (x+rel_x, y+rel_y)))
         label_coords[name] = (x+rel_x, y+rel_y)
-        print(f"Created label '{name}' at {hex(x+rel_x)}, {hex(y+rel_y)}")
+        logging.debug(f"Created label '{name}' at {hex(x+rel_x)}, {hex(y+rel_y)}")
     
     elif l.startswith("ATLABEL"):
         name = l.split("|")[2]
         coords = l.split("|")[1]
         xpos = get_value(coords.split(" ")[0]) + rel_x
         ypos = get_value(coords.split(" ")[1]) + rel_y
+        if (xpos, ypos) in list(label_coords.values()):
+            dupe = next((k for k, v in label_coords.items() if v == (xpos, ypos)))
+            logging.warning(f"Labels {dupe} and {name} have the same address.")
         label_coords[name] = (xpos, ypos)
-        print(f"Created manual label '{name}' at {hex(xpos)}, {hex(ypos)}")
+        logging.debug(f"Created manual label '{name}' at {hex(xpos)}, {hex(ypos)}")
         continue
 
     elif l.startswith("REL"):
@@ -64,14 +74,18 @@ for line in code:
         xpos = get_value(values[0])
         ypos = get_value(values[1])
         rel_x, rel_y = xpos, ypos
-        print(f"Set relative position to {hex(rel_x)}, {hex(rel_y)}")
+        if (xpos, ypos) == (0, 0):
+            logging.warning(f"Setting relative to 0, 0 does not have the same effect as ENDREL")
+        logging.debug(f"Set relative position to {hex(rel_x)}, {hex(rel_y)}")
         continue
     
     elif l.startswith("ENDREL"):
         x += rel_x
         y += rel_y
+        if (rel_x, rel_y) == (0, 0):
+            logging.warning(f"ENDREL command when already relative to 0, 0 has no effect")
         rel_x, rel_y = 0, 0
-        print(f"Ended relative mode, put pointer to {hex(x)}, {hex(y)}")
+        logging.debug(f"Ended relative mode, put pointer to {hex(x)}, {hex(y)}")
         continue
 
     elif l.split("|")[0] in "FILL IMPORT PATCH INIT_RANDOM INIT_GRADIENT".split(" "):
@@ -84,9 +98,10 @@ for line in code:
         x += 1
         x %= 256
 
-print("\n\nCode compilation")
+logging.info("Starting code compilation")
 x, y = 0, 0
 rel_x, rel_y = 0, 0
+pixels_used = 0
 for line in code:
     l = line.split("#")[0]
     l = l.strip()
@@ -95,10 +110,7 @@ for line in code:
         continue
 
     if l.startswith("#"):
-        print()
         continue
-
-    print(l, end=": ")
 
     l = l.replace("X+", hex(x+1)[2:])
     l = l.replace("Y+", hex(y+1)[2:])
@@ -125,20 +137,24 @@ for line in code:
             coords = label_coords[label_name]
         # replace (label references are affected by REL)
         l = l.replace(f"L:{label_name}", f"{hex(coords[0]+rel_x)[2:]} {hex(coords[1]+rel_y)[2:]}")
-        print(f"Replaced L:{label_name} with `{hex(coords[0])[2:]} {hex(coords[1])[2:]}`")
+        logging.debug(f"Replaced L:{label_name} with `{hex(coords[0])[2:]} {hex(coords[1])[2:]}`")
 
 
     if l.startswith("INIT_RANDOM"):
         img = randomness.gen_random(sys.argv[2])
         draw = ImageDraw.Draw(img)
-        print("Replaced all pixels in image with random instructions.")
+        if pixels_used > 0:
+            logging.warning("Overwrote already existing pixels with random pixels.")
+        logging.info("Replaced all pixels in image with random instructions.")
         continue
 
     elif l.startswith("INIT_GRADIENT"):
         for y in range(256):
             for x in range(256):
                 img.putpixel((x, y), (0, x, y))
-        print("Replaced all pixels in image with a UV gradient.")
+        if pixels_used > 0:
+            logging.warning("Overwrote already existing pixels with gradient.")
+        logging.info("Replaced all pixels in image with a UV gradient.")
         continue
 
     elif l.startswith("TO"):
@@ -146,7 +162,7 @@ for line in code:
         values = l.split("|")[1].split(" ")
         x = get_value(values[0])
         y = get_value(values[1])
-        print(f"Jumped writer to {x}, {y}")
+        logging.debug(f"Jumped writer to {x}, {y}")
         continue
     
     elif l.startswith("FILL"):
@@ -159,7 +175,11 @@ for line in code:
         
         color = tuple([get_value(v) for v in values[3].split(" ")])
         draw.rectangle([start_address, end_address], color)
-        print(f"Filled area from {start_address} to {end_address} with {color}")
+
+        size = (end_address[0]-start_address[0]+1, end_address[1]-start_address[1]+1)
+        pixels_used += size[0] * size[1]
+
+        logging.debug(f"Filled area from {start_address} to {end_address} with {color}")
         continue
 
     elif l.startswith("IMPORT"):
@@ -178,11 +198,13 @@ for line in code:
                     continue
 
                 img.putpixel(((x+x_off)%257, (y+y_off)%256), pixel)
-        print(f"Imported asset {asset_name} into {x_off}, {y_off}")
+                pixels_used += 1
+        logging.debug(f"Imported asset {asset_name} into {x_off}, {y_off}")
 
     elif l.startswith("ATLABEL"):
         # don't advance the the writer
         # but we also don't really care about this since this was already handled
+        pixels_used += 1
         continue
 
     elif l.startswith("PATCH"):
@@ -191,30 +213,33 @@ for line in code:
         y_target = get_value(values[1]) + rel_y
         color = tuple([get_value(v) for v in l.split("|")[2].split(" ")])
         img.putpixel((x_target, y_target), color)
-        print(f"Replaced singular pixel at {hex(x)}, {hex(y)} with {color}")
+        pixels_used += 1
+        logging.debug(f"Replaced singular pixel at {hex(x)}, {hex(y)} with {color}")
         continue
     
     elif l.startswith("REL"):
         offsets = l.split("|")[1].split(" ")
         rel_x = get_value(offsets[0])
         rel_y = get_value(offsets[0])
-        print(f"Set relative offset to {hex(rel_x)}, {hex(rel_y)}")
+        logging.debug(f"Set relative offset to {hex(rel_x)}, {hex(rel_y)}")
         continue
     
     elif l.startswith("ENDREL"):
         x += rel_x
         y += rel_y
         rel_x, rel_y = 0, 0
-        print(f"Ended relative mode")
+        logging.debug(f"Ended relative mode")
 
     if len(l.split(" ")) == 3: # no label on this line
         color = tuple([get_value(v) for v in l.split(" ")])
         img.putpixel((x+rel_x, y+rel_y), color)
-        print(f"Wrote singular color at {hex(x)}, {hex(y)}: ({', '.join([hex(j)[2:].upper() for j in color])})")
+        pixels_used += 1
+        logging.debug(f"Wrote singular color at {hex(x)}, {hex(y)}: ({', '.join([hex(j)[2:].upper() for j in color])})")
     
     elif l.split("|")[0] in ["PASS", "LABEL"]:
         # commands that advance writer without writing
-        print(f"Advancing writer without writing from {hex(x)}, {hex(y)}")
+        pixels_used += 1
+        logging.debug(f"Advancing writer without writing from {hex(x)}, {hex(y)}")
     else:
         continue
 
@@ -226,3 +251,4 @@ for line in code:
     
 
 img.save(sys.argv[2])
+logging.info(f"Total pixels used: {pixels_used} ({(pixels_used/65536)*100:.4f}% of address space)")

@@ -1,13 +1,16 @@
 from PIL import Image
+import custom_logger
+import numpy as np
 import pygame
 import sys
 import os
-import numpy as np
+
+logging = custom_logger.setup_logging("_latest_interpreter.log")
 
 code = Image.open(sys.argv[1])
 
 if code.size != (256, 256):
-    print("Image size is not correct.")
+    logging.error("Image size is not correct.")
     quit()
 
 pointer = [0, 0]
@@ -27,6 +30,9 @@ if "watch" in sys.argv:
             address_x = int(address_str[0], 16)
             address_y = int(address_str[1], 16)
             watch.append((name, (address_x, address_y)))
+    logging.info(f"Put {len(watch)} variables up for watch.")
+    if not debug:
+        logging.info("Log level is not debug, watch info won't be printed to console, but will be saved to file.")
 
 speed = None
 if "speed" in sys.argv:
@@ -39,7 +45,7 @@ class Environment:
         self.space = np.zeros(shape=(256, 256, 3), dtype=np.int16)
     
     def _initalize_space(self, image:Image.Image):
-        print("Initalizing space...")
+        logging.info("Initalizing space.")
         self.reserved_keycodes = {}
         self.mouse_pos_reserved_address = []
         self.mouse_click_reserved_address = []
@@ -50,7 +56,7 @@ class Environment:
 
                 # reserved keycodes
                 if np.array_equal(self.space[x][y][:2], (0xFF, 0xAE)):
-                    print(f"Reserving keycode {self.space[x][y][2]} ('{pygame.key.name(self.space[x][y][2])}') at ({x}, {y})")
+                    logging.debug(f"Reserving keycode {self.space[x][y][2]} ('{pygame.key.name(self.space[x][y][2])}') at ({x}, {y})")
                     self.reserved_keycodes[self.space[x][y][2]] = {
                         "address": (x, y),
                         pygame.KEYDOWN: image.getpixel(tuple(self._get_address_offset(address, 1))),
@@ -60,7 +66,7 @@ class Environment:
                 
                 # reserved mouse
                 if np.array_equal(self.space[x][y], (0xFF, 0x00, 0xBB)):
-                    print(f"Reserving mouse position at ({x}, {y})")
+                    logging.debug(f"Reserving mouse position at ({x}, {y})")
                     self.mouse_pos_reserved_address.append(list(address))
                 
                 # mouse input
@@ -71,7 +77,7 @@ class Environment:
                     # 0x0C is middle click, pygame button 2
                     button = self.space[x][y][2]
                     if button in [0x0A, 0x0B, 0x0C]:
-                        print(f"Reserving mouse click '{button}' at ({x}, {y})")
+                        logging.debug(f"Reserving mouse click '{button}' at ({x}, {y})")
                         self.mouse_click_reserved_address.append(
                             {
                                 "address":address,
@@ -92,7 +98,6 @@ class Environment:
     def get_pixel(self, address:list, offset:int=0) -> tuple:
         orig_address = self._get_address_offset(address, offset)
         pixel = self.space[orig_address[0]][orig_address[1]] 
-        # print(f"fetched pixel at {orig_address}. pixel={pixel} As instruction: {hex(pixel[0])[2:]}")
         return pixel.copy()
     
     def set_pixel(self, address:list, value:tuple):
@@ -196,7 +201,7 @@ def draw_bleeding_rect(tleft, size, debug_color=(255, 255, 255)):
 def blit(rects:list=[], pause=0):
     global screen
     if pixel[0] == 0xBB:
-        print("Blit instruction ran")
+        logging.debug("Starting blit")
     screen_tleft = env.space[255][254][1:]
     screen_size = env.space[254][254][1]
 
@@ -204,9 +209,9 @@ def blit(rects:list=[], pause=0):
     if not forcefull and screen.get_size() != to_pygame_screen_size:
         if screen_size != 0:
             screen = pygame.display.set_mode(to_pygame_screen_size)
-            print(f"Detected size change -> {screen.get_size()} -> {screen_size}")
+            logging.debug(f"Detected size change -> {screen.get_size()} -> {screen_size}")
         else:
-            print("Screensize is 0, not blitting.")
+            logging.debug("Screensize is 0, not blitting.")
             if screen.get_size() != (1, 1):
                 screen = pygame.display.set_mode((1, 1))
             return
@@ -217,7 +222,7 @@ def blit(rects:list=[], pause=0):
 
     # Courtesy of ChatGPT
     render = pygame.Surface((256, 256))
-    pygame.surfarray.blit_array(render, env.space)
+    pygame.surfarray.blit_array(render, np.clip(env.space, 0, 255).astype(np.uint8, copy=False))
     scaled_render = pygame.transform.scale(render, (1024, 1024))
     if not forcefull:
         screen.blit(scaled_render, tuple([
@@ -261,36 +266,35 @@ pointer = [0, 0]
 env = Environment()
 env._initalize_space(code)
 
+logging.info("Setting up PyGame window info.")
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50,50)
 pygame.init()
 screen = pygame.display.set_mode((256*4, 256*4))
 screen.fill((0, 0, 0))
 clock = pygame.time.Clock()
 
-if not debug:
-    print = lambda *x : None
-
 if forcefull:
     blit()
     
 pygame.display.flip()
 
+logging.info("Starting main code loop.")
 while True:
     pointer = list(pointer)
     pixel = env.get_pixel(pointer)
     rects = []
 
-    if watch is not None:
+    if watch:
+        logging.debug("Starting watch info")
         for d in watch:
-            sys.stdout.write(f"{d[0]:<15} {env.get_pixel(list(d[1]))}\n")
-        sys.stdout.write("-------\n")
+            logging.debug(f"{d[0]:<15} {env.get_pixel(list(d[1]))}\n")
 
     # instructions
     match pixel[0]:
 
         case 0x50: # OFFSET
             target = env._get_address_offset(pointer, pixel[1])
-            print(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
+            logging.debug(f"Offset instruction by {pixel[1]}, going from {pointer} to {target}")
             pointer = env._get_address_offset(target, -1)
             # continue
         
@@ -304,7 +308,7 @@ while True:
             
             pointer = env._get_address_offset(pointer, 0) # properly wrap
 
-            print("Value / variable instruction, ignoring")
+            logging.debug("Value / variable instruction, skipping ahead accordingly")
 
         case 0xBB: # BLIT
             if not forcefull: #forcefull is already rendering every frame, so this wastes time otherwise
@@ -315,7 +319,7 @@ while True:
             target = pixel[1:]
             value = env.get_pixel(pointer, 1)
             env.set_pixel(target, value)
-            print(f"Write instruction, wrote {value} at {target}")
+            logging.debug(f"Write instruction, wrote {value} at {target}")
             pointer = env._get_address_offset(pointer, 1)            
 
         case 0xC0: # COPY AREA
@@ -339,7 +343,7 @@ while True:
                     (bottom_right[1] + vert_offset) - top_left[1],
                 ], (255, 0, 0)))
 
-            print(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
+            logging.debug(f"Copy area instruction, copied from {top_left} to {bottom_right} to {target}")
             pointer = env._get_address_offset(pointer, 3)
             
             # Thank you ChatGPT for this one
@@ -380,7 +384,7 @@ while True:
             for src in src_indices:
                 env.set_pixel(src.tolist(), target)
         
-            print(f"Fill area instruction, filled {top_left} to {bottom_right} with {target}")
+            logging.debug(f"Fill area instruction, filled {top_left} to {bottom_right} with {target}")
             pointer = env._get_address_offset(pointer, 2)
             if showpointer and forcefull:
                 rects.append(draw_bleeding_rect(top_left, [
@@ -392,7 +396,7 @@ while True:
             source = pixel[1:]
             target = env.get_pixel(pointer, 1)[1:]
 
-            print(f"Copy instruction, copied {source} at {target}")
+            logging.debug(f"Copy instruction, copied {source} at {target}")
             pointer = env._get_address_offset(pointer, 1)
             env.set_pixel(target, env.get_pixel(source))
 
@@ -403,7 +407,7 @@ while True:
 
             val1, val2, _ = env.get_double_val(pointer)
 
-            print(f"If instruction, mode {pixel[0]} on {val1} and {val2}")
+            logging.debug(f"If instruction, mode {pixel[0]} on {val1} and {val2}")
             # different operators
             if pixel[0] == 0x1A: # EQUAL
                 if val1 == val2:
@@ -423,7 +427,7 @@ while True:
         
         case 0xEF: # BRANCH
             target = pixel[1:]
-            print(f"Branch instruction, to {target}")
+            logging.debug(f"Branch instruction, to {target}")
             # append to stack
             for s in range(256):
                 if np.array_equal(env.space[s][255], (0, 0, 0)):
@@ -438,7 +442,7 @@ while True:
 
         case 0x40: # GOTO
             target = pixel[1:]
-            print(f"Goto instruction, to {target}")
+            logging.debug(f"Goto instruction, to {target}")
             pointer = env._get_address_offset(target, -1)
             # continue
 
@@ -454,7 +458,7 @@ while True:
             else:
                 pointer = [0, 0]
             
-            print(f"Return instruction, returned pointed to {pointer}")
+            logging.debug(f"Return instruction, returned pointed to {pointer}")
             # pointer = env._get_address_offset(pointer, 1)
             # continue
 
@@ -496,7 +500,7 @@ while True:
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
-            print(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
+            logging.debug(f"Arithmetic instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
             if forcefull and showpointer:
                 rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3+3], (0, 0, 0)))
             # continue
@@ -534,7 +538,7 @@ while True:
                 env.set_pixel(env._get_address_offset(target, b//3), (int(b_result[b]), int(b_result[b+1]), int(b_result[b+2])))
             
             pointer = env._get_address_offset(pointer, offset-1)
-            print(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
+            logging.debug(f"Bitwise instruction -> {hex(val1)} and {hex(val2)} result {hex(result)} stored at {target}, jumped pointer to {pointer}")
             if forcefull and showpointer:
                 rects.append(draw_bleeding_rect([target[0]-2, target[1]-2], [4, len(b_result)//3 + 3], (0, 0, 0)))
             # continue
@@ -543,7 +547,7 @@ while True:
             ...
             
         case _:
-            print(f"Unrecognized opcode '{hex(pixel[0])}'")
+            logging.warning(f"Unrecognized opcode '{hex(pixel[0])}'")
 
     if forcefull:
         blit(rects)
@@ -558,7 +562,7 @@ while True:
         if event.type in [pygame.KEYDOWN, pygame.KEYUP]:
             if event.key in env.reserved_keycodes.keys():
                 env.set_pixel(env.reserved_keycodes[event.key]["address"], env.reserved_keycodes[event.key][event.type])
-                print("Reserved keycode event detected")
+                logging.debug("Reserved keycode event detected")
         
         if event.type == pygame.MOUSEMOTION:
             screen_tleft = env.space[255][254][1:]
@@ -574,7 +578,7 @@ while True:
                 env.set_pixel(address, value)
         
         if event.type in [pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP]:
-            print("Reserved mouse event detected")
+            logging.debug("Reserved mouse event detected")
             for button in env.mouse_click_reserved_address:
                 if event.button == button['button']:
                     env.set_pixel(button['address'], button[event.type])
