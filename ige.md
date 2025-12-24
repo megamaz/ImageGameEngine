@@ -12,9 +12,41 @@ RR GG BB
 ```
 They technically don't all have to be two characters long, but it makes the code more readable since it keeps everything aligned (if you're using a monospace font).
 
+If an instruction takes up multiple pixels, you can make it single line by using a semicolon for readability, like this:
+```
+B0 50 50;FF FF FF
+```
+This is the equivalent of
+```
+B0 50 50
+FF FF FF
+```
+But in a more readable format.
+
 If you want to use decimal rather than hex, your number should start with a `$`. For example, if you want to say "goto 120 120", then you can write `40 $120 $120`. This works in both commands and raw instructions.
 
 Then, for a bit more user control, there are some commands that you can insert. All of these should be in all caps. Each parameter is separated by a pipe (`|`). These commands only affect how the file is written to, and not how the file is ran.
+
+## Instructions
+All instructions also have word variations. These are replaced by their respective word counterparts.
+
+For readability, they have all been made 3 characters. Here is the list:
+- `OFF` for 0x50 offset. 
+- `GTO` for 0x40 goto
+- `VAL` for 0xA0 value
+- `VAR` for 0xA1 variable
+- `WRT` for 0xB0 write
+- `CAR` for 0xC0 copy area
+- `CAV` for 0xCA copy value
+- `FLL` for 0xD0 fill area
+- `IFE` for 0x1A If Equality
+- `IFL` for 0x1B If Less Then
+- `BLT` for 0xBB blit
+- `BNC` for 0xEF branch
+- `RTN` for 0xEE return
+- Arithmetics are `ADD`, `MUL`, `DIV`, `SUB`, and `MOD`
+- Bitwise are `AND`, `XOR`, `BOR`, `BSL`, and `BSR`, with the last two being bitshifts.
+
 
 ## Relative Variables
 In order to write stuff that is relative to the current position of the writer, you can write `X`, `Y`, followed by a singular `+` or `-`. In order to reference the *current* position of the pointer, you *need* to put a space before the `X` or `Y`.

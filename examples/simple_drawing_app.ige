@@ -20,67 +20,55 @@ IMPORT|A0 00|palette.png
 # main loop
 TO|51 51
 # initial screen setup
-D0 00 00
-00 40 40
-FF FF FF
+FLL 00 00 ; 00 40 40 ; FF FF FF
 
 
 LABEL|LOOP_START
 TO| X Y-
     # clone pallette
-    C0 A0 00
-    00 A4 40
-    00 3C 00
-    12 34 56 # mask isn't a color in the palette
+    CAR A0 00 ; 00 A4 40 ; 00 3C 00 ; 12 34 56 # mask isn't a color in the palette
 
     # draw on mouse click
     FF BB 0A
-    40 52 51 # to draw function
-    50 03 00
+    GTO 52 51 # to draw function
+    OFF 03 00
 
     FF BB 0B
-    40 53 51 # to select color function
-    50 03 00
+    GTO 53 51 # to select color function
+    OFF 03 00
 
     LABEL|AFTER_INPUT
 
     # blit and reset loop
-    BB 00 00
-    40 L:LOOP_START
+    BLT 00 00
+    GTO L:LOOP_START
 
 
 TO|52 51 # mouse draw function
     # get color
     # we store color at FA 00
     # OR mouse position with a write
-    3C L:MOUSE_WRITE
-    00 00 00
-    A0 03 00
-    B0 00 00
-    A1 L:MOUSE_POS
-    00 03 00
+    BOR L:MOUSE_WRITE ; 00 00 00
+    VAL 03 00 ; WRT 00 00
+    VAR L:MOUSE_POS ; 00 03 00
 
     # clone mouse color
-    CA FA 00
-    00 L:MOUSE_COLOR
+    CAV FA 00 ; 00 L:MOUSE_COLOR
 
     # do the draw
     LABEL|MOUSE_WRITE
     LABEL|MOUSE_COLOR
 
-    40 L:AFTER_INPUT # return to main loop
+    GTO L:AFTER_INPUT # return to main loop
 
 TO|53 51
     # clone the current color at mouse position to FA 00
     # OR the mouse position with a copy instruction
-    3C L:MOUSE_CLONE
-    00 00 00
-    A0 03 00
-    CA 00 00
-    A1 L:MOUSE_POS
-    00 03 00
+    BOR L:MOUSE_CLONE ; 00 00 00
+    VAL 03 00 ; CAV 00 00
+    VAR L:MOUSE_POS ; 00 03 00
 
     LABEL|MOUSE_CLONE
     00 FA 00
 
-    40 L:AFTER_INPUT # return to main loop
+    GTO L:AFTER_INPUT # return to main loop

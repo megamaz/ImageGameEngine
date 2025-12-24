@@ -29,26 +29,22 @@ REL|41 41
 TO|00 00
 ENDREL
     # clear the screen
-    D0 00 01
-    00 40 40
-    00 00 00
+    FLL 00 01 ; 00 40 40 ; 00 00 00
 
     # draw the apple using a sneaky OR with a write instruction
-    3C L:APPLE_WRITE
-    00 00 00
-    A0 03 00
-    B0 00 00
-    A1 L:APPLE_POS
-    00 03 00
+    BOR L:APPLE_WRITE ; 00 00 00
+    VAL 03 00 ; WRT 00 00
+    VAR L:APPLE_POS ; 00 03 00
+
     LABEL|APPLE_WRITE
     69 0D 0D # apple color
 
-    1A L:not_eaten # IF head and apple are (not) in same spot
-    00 42 41 # 42 41 is where I put the function for eating an apple
-    A1 L:HEAD_POS
-    00 03 00
-    A1 L:APPLE_POS
-    00 03 00
+    # IF head and apple are (not) in same spot
+    # 42 41 is where I put the function for eating an apple
+    IFE L:not_eaten ; 00 42 41
+    VAR L:HEAD_POS ; 00 03 00
+    VAR L:APPLE_POS ; 00 03 00
+
     LABEL|not_eaten
     TO| X Y-
     
@@ -58,34 +54,22 @@ ENDREL
     # copy upwards to avoid overriding 
     # this means we'll write the last body position to FE FA
     # and the color will be FE FB
-    C0 FE 03
-    00 FE FB
-    00 FE 01
-    00 00 00
+    CAR FE 03 ; 00 FE FB ; 00 FE 01 ; 00 00 00
 
     # to only draw the correct body length, we'll write in a jump at FE 01 
     # value of the jump will be at FA 00, we'll then OR it with FE 00
     # first do body_length * 2 to properly subtract
-    2B EA 00
-    00 00 00
-    A1 L:BODY_LENGTH
-    00 01 00
-    A0 01 00
-    02 00 00
+    MUL EA 00 ; 00 00 00
+    VAR L:BODY_LENGTH ; 00 01 00
+    VAL 01 00 ; 02 00 00
 
-    2D FA 00
-    00 02 00
-    A0 01 00
-    FB 00 00
-    A1 EA 00
-    00 01 00
+    SUB FA 00 ; 00 02 00
+    VAL 01 00 ; FB 00 00
+    VAR EA 00 ; 00 01 00
     
-    3C FE 01
-    00 00 00
-    A0 03 00
-    40 L:BODY_LENGTH
-    A1 FA 00
-    00 03 00
+    BOR FE 01 ; 00 00 00
+    VAL 03 00 ; 40 L:BODY_LENGTH
+    VAR FA 00 ; 00 03 00
 
     # the body
     # copy the current head position to top of list
@@ -93,33 +77,25 @@ ENDREL
     # the value at L:HEAD_WRITE is some random instruction on the first loop
     # I don't wanna overcomplicate this, so I'll first AND it with a write instruction
     # that way even it now becomes a random write to 00 00, which we never jump back to
-    3A L:HEAD_WRITE
-    00 00 00
-    A0 03 00
-    B0 FF FF
-    A1 L:HEAD_WRITE
-    00 03 00
+    AND L:HEAD_WRITE ; 00 00 00
+    VAL 03 00 ; WRT FF FF
+    VAR L:HEAD_WRITE ; 00 03 00
 
     # now we do the copy
-    CA L:HEAD_WRITE
-    00 FE FA
-    B0 FE FB
-    07 5E 28
+    CAR L:HEAD_WRITE ; 00 FE FA ; B0 FE FB ; 07 5E 28
 
     # to draw the body, we just jump to FE 01, since the body
     # is stored as a series of write instructions
-    40 FE 01
+    GTO FE 01
     LABEL|after_draw # useful return point
     TO| X Y-
 
     # we draw the head after the body so that we can see it
     # use the same sneaky apple trick as earlier
-    3C L:HEAD_WRITE
-    00 00 00
-    A0 03 00
-    B0 00 00
-    A1 L:HEAD_POS
-    00 03 00
+    BOR L:HEAD_WRITE ; 00 00 00
+    VAL 03 00 ; B0 00 00
+    VAR L:HEAD_POS ; 00 03 00
+
     LABEL|HEAD_WRITE
     FF 00 00 # head color
 
@@ -129,132 +105,102 @@ ENDREL
     # if the key is pressed, we want to jump to the appropriate method to handle that direction
     # if it's not pressed, then we jump
     FF AE 77 # w key
-    40 43 41 # if pressed, jump to move body
-    50 03 00 # otherwise, advance
+    GTO 43 41 # if pressed, jump to move body
+    OFF 03 00 # otherwise, advance
     
     FF AE 61 # a key
-    40 44 41
-    50 03 00
+    GTO 44 41
+    OFF 03 00
 
     FF AE 73 # s key
-    40 45 41
-    50 03 00
+    GTO 45 41
+    OFF 03 00
 
     FF AE 64 # d key
-    40 46 41
-    50 03 00
+    GTO 46 41
+    OFF 03 00
 
     LABEL|after_move # useful return point (again)
     TO| X Y-
 
     # blit at 15fps (makes snake easier to control)
-    BB 00 $15
+    BLT 00 $15
 
     # return to start of loop
-    40 41 41
+    GTO 41 41
 
 # function for eating an apple
 TO|42 41
     # add to length of body
     # length of body is stored at FE 00
     # so we do whatever is at FE 00 + 1 and store it at FE 00
-    2A L:BODY_LENGTH
-    00 00 00
-    A1 L:BODY_LENGTH
-    00 01 00
-    A0 01 00
-    01 00 00
+    ADD L:BODY_LENGTH ; 00 00 00
+    VAR L:BODY_LENGTH ; 00 01 00
+    VAL 01 00 ; 01 00 00
 
     # move apple
     # pretty arbitrary number, but creates good "random" movement after the modulo
-    2A E1 00
-    00 01 00
-    A1 L:APPLE_POS
-    00 03 00
-    A0 03 00
-    00 12 34
+    ADD E1 00 ; 00 01 00
+    VAR L:APPLE_POS ; 00 03 00
+    VAL 03 00 ; 00 12 34
 
     # modulo apple Y
-    2E E2 00
-    00 02 00
-    A1 E1 00
-    00 03 00
-    A0 01 00
-    40 00 00
+    MOD E2 00 ; 00 02 00
+    VAR E1 00 ; 00 03 00
+    VAL 01 00 ; 40 00 00
 
     # modulo apple X
     # first do an AND to isolate the X
-    3A E3 00
-    00 00 00
-    A0 03 00
-    00 FF 00
-    A1 E1 00
-    00 03 00
+    AND E3 00 ; 00 00 00
+    VAL 03 00 ; 00 FF 00
+    VAR E1 00 ; 00 03 00
 
     # now we do the modulo
-    2E E4 00
-    00 01 00
-    A1 E3 00
-    00 01 00
-    A0 01 00
-    40 00 00
+    MOD E4 00 ; 00 01 00
+    VAR E3 00 ; 00 01 00
+    VAL 01 00 ; 40 00 00
 
     # OR the two together and that's the new apple pos
-    3C L:APPLE_POS
-    00 01 00
-    A1 E4 00
-    00 03 00
-    A1 E2 00
-    00 03 00
+    BOR L:APPLE_POS ; 00 01 00
+    VAR E4 00 ; 00 03 00
+    VAR E2 00 ; 00 03 00
 
     # return (with a goto instruction) to main loop
-    40 L:not_eaten
+    GTO L:not_eaten
 
 # move body functions
 TO|43 41
     # up 
-    2D L:HEAD_POS
-    00 01 00
-    A1 L:HEAD_POS
-    00 03 00
-    A0 01 00
-    01 00 00
+    SUB L:HEAD_POS ; 00 01 00
+    VAR L:HEAD_POS ; 00 03 00
+    VAL 01 00 ; 01 00 00
 
     # return to main loop after having moved
-    40 L:after_move
+    GTO L:after_move
 
 TO|44 41
     # left
-    2D L:HEAD_POS
-    00 01 00
-    A1 L:HEAD_POS
-    00 03 00
-    A0 02 00
-    01 00 00
+    SUB L:HEAD_POS ; 00 01 00
+    VAR L:HEAD_POS ; 00 03 00
+    VAL 02 00 ; 01 00 00
 
-    40 L:after_move
+    GTO L:after_move
 
 TO|45 41
     # down
     # for fun, we don't care about wrapping :D
     # the reason I'm saying this is fun is because that means the snake can sneakily enter the game code, and start overwriting a bunch of useful data.
     # this usually ends up in a softlock, but it's still fun nonetheless.
-    2A L:HEAD_POS
-    00 01 00
-    A1 L:HEAD_POS
-    00 03 00
-    A0 01 00
-    01 00 00
+    ADD L:HEAD_POS ; 00 01 00
+    VAR L:HEAD_POS ; 00 03 00
+    VAL 01 00 ; 01 00 00
 
-    40 L:after_move
+    GTO L:after_move
 
 TO|46 41
     # right
-    2A L:HEAD_POS
-    00 01 00
-    A1 L:HEAD_POS
-    00 03 00
-    A0 02 00
-    01 00 00
+    ADD L:HEAD_POS ; 00 01 00
+    VAR L:HEAD_POS ; 00 03 00
+    VAL 02 00 ; 01 00 00
 
-    40 L:after_move
+    GTO L:after_move

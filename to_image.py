@@ -5,9 +5,41 @@ import sys
 
 logging = custom_logger.setup_logging("_latest_to_image.log")
 
+MACROS = {
+    "OFF":"50",
+    "GTO":"40",
+    "VAL":"A0",
+    "VAR":"A1",
+    "WRT":"B0",
+    "CAR":"C0",
+    "CAV":"CA",
+    "FLL":"D0",
+    "IFE":"1A",
+    "IFL":"1B",
+    "BLT":"BB",
+    "BNC":"EF",
+    "RTN":"EE",
+    "ADD":"2A",
+    "MUL":"2B",
+    "DIV":"2C",
+    "SUB":"2D",
+    "MOD":"2E",
+    "AND":"3A",
+    "XOR":"3B",
+    "BOR":"3C",
+    "BSL":"3D",
+    "BSR":"3E",
+}
+
 print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
 
 code = open(sys.argv[1], "r").read().splitlines()
+newcode = []
+for c in code:
+    lines = c.split(";")
+    newcode += lines
+code = newcode
+
 logging.info("Loaded IGE file")
 
 img = Image.new("RGB", (256, 256))
@@ -19,6 +51,13 @@ def get_value(string:str):
         return int(string[1:])
     else:
         return int(string, 16)
+
+logging.info("Replacing macros")
+for m, v in MACROS.items():
+    for c in range(len(code)):
+        code[c] = code[c].replace(m, v)
+
+
 
 # first pass to do labels
 logging.info("Setting up labels")

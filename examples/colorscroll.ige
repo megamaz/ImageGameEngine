@@ -17,25 +17,20 @@ PATCH|00 00|40 50 50 # jump to main loop
 TO|50 50
 
 # add FE to color
-2A L:COLOR
-00 00 00
-A1 L:COLOR
-00 03 00
-A0 01 00
-FE 00 00
+ADD L:COLOR ; 00 00 00
+VAR L:COLOR ; 00 03 00
+VAL 01 00 ; FE 00 00
 
 # fill screen with color
 # start by copying color just ahead
-CA L:COLOR
-00 L:COLOR_FILL
+CAV L:COLOR ; 00 L:COLOR_FILL
 
 # now do the fill
-D0 00 01
-00 $65 $65
+FLL 00 01 ; 00 $65 $65
 LABEL|COLOR_FILL
 
 # blit
-BB 00 00
+BLT 00 00
 
 # and return to main loop
-40 50 50
+GTO 50 50

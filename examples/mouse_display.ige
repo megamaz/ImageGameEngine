@@ -13,24 +13,21 @@ ATLABEL|FF 00|MOUSE_POS
 # main loop
 TO|51 51
     # or with a write instruction
-    3C L:DRAW_MOUSE
-    00 00 00
-    A1 L:MOUSE_POS
-    00 03 00
-    A0 03 00
-    B0 00 00
+    BOR L:DRAW_MOUSE ; 00 00 00
+    VAR L:MOUSE_POS ; 00 03 00
+    VAL 03 00 ; WRT 00 00
+
     LABEL|DRAW_MOUSE
     FF FF FF # mouse color
 
     # copy the instruction just ahead to erase the pixel
-    CA L:DRAW_MOUSE
-    00 L:CLEAR_MOUSE
+    CAV L:DRAW_MOUSE ; 00 L:CLEAR_MOUSE
 
     # blit
-    BB 00 00
+    BLT 00 00
 
     LABEL|CLEAR_MOUSE
     00 00 00
 
     # reset loop
-    40 51 51
+    GTO 51 51
