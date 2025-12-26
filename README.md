@@ -227,5 +227,8 @@ The screen position is stored in `(0xFF, 0xFE)`. The pixel is stored in the form
 ## Screen Size
 The screen size is stored in `(0xFE, 0xFE)`, and is stored in the format `(0x00, S, 0x00)`, with S being the square size of the screen. The screen will always be square.
 
+## Current Reader Position
+The current reader position is stored in `(0xFD, 0xFE)`. Writing to this address at runtime will not have any effects, as the reader will update this pixel between every cycle. However, this can be set in the initial image to control where the pointer will start.
+
 ## Branch Stack
 Has a maximum size of 256, and uses the entire bottom row from `(0x00, 0xFF)` to `(0xFF, 0xFF)`. Each pixel is stored in the format `(0x40, X, Y)` as goto instructions.

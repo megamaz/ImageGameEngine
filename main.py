@@ -45,6 +45,7 @@ class Environment:
         self.space = np.zeros(shape=(256, 256, 3), dtype=np.int16)
     
     def _initalize_space(self, image:Image.Image):
+        """Initializes the environment and returns the starting reader address."""
         logging.info("Initalizing space.")
         self.reserved_keycodes = {}
         self.mouse_pos_reserved_address = []
@@ -87,6 +88,9 @@ class Environment:
                             }
                         )
                         self.space[x][y] = self.mouse_click_reserved_address[-1][pygame.MOUSEBUTTONUP]
+        
+        start_value = self.space[0xFD][0xFE]
+        return [start_value[1], start_value[2]]
 
 
     def _get_address_offset(self, address, offset):
@@ -264,7 +268,7 @@ pixel = [0, 0, 0]
 pointer = [0, 0]
 
 env = Environment()
-env._initalize_space(code)
+pointer = [int(x) for x in env._initalize_space(code)]
 
 logging.info("Setting up PyGame window info.")
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50,50)
@@ -288,6 +292,9 @@ while True:
         logging.debug("Starting watch info")
         for d in watch:
             logging.debug(f"{d[0]:<15} {env.get_pixel(list(d[1]))}\n")
+
+    # update FD,FE to current reader position
+    env.set_pixel([0xFD, 0xFE], [0, *pointer])
 
     # instructions
     match pixel[0]:
@@ -610,9 +617,6 @@ state = Image.new("RGB", (256, 256))
 for x in range(256):
     for y in range(256):
         state.putpixel((x, y), tuple(env.get_pixel([x, y])))
-
-# to load, put a goto instruction as the first pixel
-state.putpixel((0, 0), (0x40, pointer[0], pointer[1]))
 
 state.save("state.png")
 
