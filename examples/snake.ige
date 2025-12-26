@@ -82,7 +82,8 @@ ENDREL
     VAR L:HEAD_WRITE ; 00 03 00
 
     # now we do the copy
-    CAR L:HEAD_WRITE ; 00 FE FA ; B0 FE FB ; 07 5E 28
+    CAV L:HEAD_WRITE ; 00 FE FA
+    WRT FE FB ; 07 5E 28
 
     # to draw the body, we just jump to FE 01, since the body
     # is stored as a series of write instructions
