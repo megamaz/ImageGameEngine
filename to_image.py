@@ -17,7 +17,7 @@ MACROS = {
     "IFE":"1A",
     "IFL":"1B",
     "BLT":"BB",
-    "BNC":"EF",
+    "BRN":"EF",
     "RTN":"EE",
     "ADD":"2A",
     "MUL":"2B",

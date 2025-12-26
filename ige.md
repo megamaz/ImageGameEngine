@@ -42,7 +42,7 @@ For readability, they have all been made 3 characters. Here is the list:
 - `IFE` for 0x1A If Equality
 - `IFL` for 0x1B If Less Then
 - `BLT` for 0xBB blit
-- `BNC` for 0xEF branch
+- `BRN` for 0xEF branch
 - `RTN` for 0xEE return
 - Arithmetics are `ADD`, `MUL`, `DIV`, `SUB`, and `MOD`
 - Bitwise are `AND`, `XOR`, `BOR`, `BSL`, and `BSR`, with the last two being bitshifts.

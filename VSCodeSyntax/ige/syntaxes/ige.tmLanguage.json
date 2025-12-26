@@ -23,7 +23,7 @@
 			"patterns": [
 				{
 					"name": "entity.name.function.ige",
-					"match": "\\b(?<=^\\s*|[^\\|])(OFF|GTO|VAL|VAR|WRT|CAR|CAV|FLL|IFE|IFL|BLT|BNC|RTN|ADD|MUL|DIV|SUB|MOD|AND|XOR|BOR|BSL|BSR)\\s(?=((\\$\\d+|[A-Fa-f0-9]{2})[^\\n](\\$\\d+|[A-Fa-f0-9]{2}))|L:)\\b"
+					"match": "\\b(?<=^\\s*|[^\\|])(OFF|GTO|VAL|VAR|WRT|CAR|CAV|FLL|IFE|IFL|BLT|BRN|RTN|ADD|MUL|DIV|SUB|MOD|AND|XOR|BOR|BSL|BSR)\\s(?=((\\$\\d+|[A-Fa-f0-9]{2})[^\\n](\\$\\d+|[A-Fa-f0-9]{2}))|L:)\\b"
 				}
 			]
 		},
