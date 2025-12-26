@@ -20,6 +20,12 @@
       "language": "ige",
       "scopeName": "source.ige",
       "path": "./syntaxes/ige.tmLanguage.json"
-    }]
+    }],
+    "snippets":[
+      {
+        "language": "ige",
+        "path": "./snippets/ige.snippets.json"
+      }
+    ]
   }
 }
