@@ -45,8 +45,7 @@ ENDREL
     VAR L:HEAD_POS ; 00 03 00
     VAR L:APPLE_POS ; 00 03 00
 
-    LABEL|not_eaten
-    TO| X Y-
+    HLABEL|not_eaten
     
     # move all positions up using a copy area instruction
     # won't bother with copying only the snake length so im copying the whole row
@@ -88,8 +87,7 @@ ENDREL
     # to draw the body, we just jump to FE 01, since the body
     # is stored as a series of write instructions
     GTO FE 01
-    LABEL|after_draw # useful return point
-    TO| X Y-
+    HLABEL|after_draw # useful return point
 
     # we draw the head after the body so that we can see it
     # use the same sneaky apple trick as earlier
@@ -121,8 +119,7 @@ ENDREL
     GTO 46 41
     OFF 03 00
 
-    LABEL|after_move # useful return point (again)
-    TO| X Y-
+    HLABEL|after_move # useful return point (again)
 
     # blit at 15fps (makes snake easier to control)
     BLT 00 $15

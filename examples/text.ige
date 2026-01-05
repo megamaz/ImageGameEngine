@@ -89,8 +89,7 @@ FLL 00 00 ; 00 F0 41 ; FF FF FF
     LABEL|PROP_PIXEL_INDEX
     LABEL|PROP_PIXEL_OFFSET
     
-    LABEL|IF_END
-    TO| X Y-
+    HLABEL|IF_END
 
     # if we aren't, then we do a quick clone of the A1
     CAV L:PROP_PIXEL_INDEX ; 00 L:PROP_PIXEL_CLONE1

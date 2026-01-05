@@ -31,7 +31,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.ige",
-					"match": "\\b(TO|FILL|PASS|IMPORT|LABEL|ATLABEL|INIT_RANDOM|INIT_GRADIENT|REL|ENDREL|PATCH|L:)\\b"
+					"match": "\\b(TO|FILL|PASS|IMPORT|LABEL|ATLABEL|HLABEL|INIT_RANDOM|INIT_GRADIENT|REL|ENDREL|PATCH|L:)\\b"
 				}
 			]
 		},

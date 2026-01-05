@@ -23,8 +23,7 @@ TO|51 51
 FLL 00 00 ; 00 40 40 ; FF FF FF
 
 
-LABEL|LOOP_START
-TO| X Y-
+HLABEL|LOOP_START
     # clone pallette
     CAR A0 00 ; 00 A4 40 ; 00 3C 00 ; 12 34 56 # mask isn't a color in the palette
 

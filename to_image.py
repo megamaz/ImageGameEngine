@@ -89,12 +89,14 @@ for line in code:
         logging.debug(f"Jumped writer to {hex(x)}, {hex(y)} relative to {hex(rel_x)}, {hex(rel_y)}")
         continue
 
-    elif l.startswith("LABEL"):
+    elif l.startswith("LABEL") or l.startswith("HLABEL"):
         name = l.split("|")[1]
         if (x+rel_x, y+rel_y) in list(label_coords.values()):
             dupe = next((k for k, v in label_coords.items() if v == (x+rel_x, y+rel_y)))
         label_coords[name] = (x+rel_x, y+rel_y)
         logging.debug(f"Created label '{name}' at {hex(x+rel_x)}, {hex(y+rel_y)}")
+        if l.startswith("HLABEL"):
+            continue
     
     elif l.startswith("ATLABEL"):
         name = l.split("|")[2]

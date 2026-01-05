@@ -163,6 +163,16 @@ PATCH|12 34|40 L:my_label
 ```
 Then the reference to `my_label` will be absolute. This means the line will be interpreted as `PATCH|12 34|40 a5 a5`. This behavior perists after the `ENDREL` command (that is to say that label references are *always* absolute, but their creation is relative.)
 
+## HLABEL|NAME
+This command doesn't advance the writer.
+
+Stands for "Here Label". Works identically to `LABEL`, but doesn't advance the writer. This skips having to do 
+```
+LABEL|my_label
+TO| X Y-
+```
+when creating useful return points. 
+
 ## ATLABEL|XX YY|NAME
 This command does't advance the writer.
 
