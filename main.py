@@ -266,9 +266,11 @@ def blit(rects:list=[], pause=0):
 
 pixel = [0, 0, 0]
 pointer = [0, 0]
+cycle_count = 0
 
 env = Environment()
 pointer = [int(x) for x in env._initalize_space(code)]
+cycle_count = env.get_variable((0xFC, 0xFE), 3, 0)
 
 logging.info("Setting up PyGame window info.")
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50,50)
@@ -612,6 +614,12 @@ while True:
     # increment pointer
     pointer = env._get_address_offset(pointer, 1)
 
+    # increment cycle count
+    cycle_count += 1
+    cycle_bytes = cycle_count.to_bytes(3)
+    env.set_pixel((0xFC, 0xFE), (cycle_bytes[0], cycle_bytes[1], cycle_bytes[2]))
+
+
 # save final state as image
 state = Image.new("RGB", (256, 256))
 for x in range(256):
@@ -626,3 +634,4 @@ state.save("state.png")
 # debug - shows debug logs
 # stepping - lets you prace p to step forward one instruction at a time
 # speed [x] - runs the program at [x] instructions per second
+# watch [config] - allows you to log watch pixel information to debug

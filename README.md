@@ -230,5 +230,8 @@ The screen size is stored in `(0xFE, 0xFE)`, and is stored in the format `(0x00,
 ## Current Reader Position
 The current reader position is stored in `(0xFD, 0xFE)`. Writing to this address at runtime will not have any effects, as the reader will update this pixel between every cycle. However, this can be set in the initial image to control where the pointer will start.
 
+## Reader Cycle Count
+The amount of reader cycles is stored `(0xFC, 0xFE)` in all 3 R, G, and B, with B being the low byte and R being the high byte. This counter will overflow and reset to 0 after reaching 0xFFFFFF.
+ 
 ## Branch Stack
 Has a maximum size of 256, and uses the entire bottom row from `(0x00, 0xFF)` to `(0xFF, 0xFF)`. Each pixel is stored in the format `(0x40, X, Y)` as goto instructions.
