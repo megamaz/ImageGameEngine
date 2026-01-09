@@ -616,6 +616,7 @@ while True:
 
     # increment cycle count
     cycle_count += 1
+    cycle_count %= 0xFFFFFF
     cycle_bytes = cycle_count.to_bytes(3)
     env.set_pixel((0xFC, 0xFE), (cycle_bytes[0], cycle_bytes[1], cycle_bytes[2]))
 
