@@ -189,6 +189,54 @@ ATLABEL|FF 00|my_var
 PATCH|FF 00|01 00 00
 ```
 
+## MAPSTRING|SOURCE|MAP
+This command does not advance the writer.
+
+This defines a string mapping for strings. This has to be used before strings can be used.
+
+The source defines the numerical range. There can be multiple and they must be comma separated. The map defines the ascii range which these characters will map to.
+
+For example, to map all lowercase characters to the range 0 to 26, you'd do this:
+```
+MAPSTRING|$00-$26|'a-z'
+```
+Using this will define a new mapping. To define a single character mapping, such as a space or string terminator, they need to be in their own line, like this:
+```
+MAPSTRING|$00|' ' # space
+MAPSTRING|FF|'.' # terminator
+```
+
+After this, you can start using strings, so long as the characters within it are defined in a previous mapping. The string will translate to bytes that will overflow to following pixels from the writer location.
+
+For example, the below code defines space as 00, a through z as 1 through 27, and period as `FF`.
+```
+MAPSTRING|$01-$27|'a-z'
+MAPSTRING|$00|' '
+MAPSTRING|FF|'.'
+"hello world."
+```
+This will translate to this during compilation.
+```
+08 05 0C
+0C 0F 00
+17 0F 12
+0C 04 FF
+```
+
+A string will be padded with 00 bytes if it's too short for a pixel. If you attempt to use a character not defined in the mapping, the compiler will crash.
+
+## UNMAP|RANGE
+This command doesn't advance the writer.
+
+This will undefine a string mapping for that range. For instance, if you previously defined a mapping for lowercase characters like this:
+```
+MAPSTRING|$00-$26|'a-z'
+```
+You can unmap the whole range, or part of the range, by simply doing this:
+```
+UNMAP|$00-$12
+```
+This will unmap all characters mapped on the interval of 0 through 12, but leave 13 through 26 untouched.
 
 ## INIT_RANDOM
 This command doesn't advance the writer.

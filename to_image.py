@@ -1,7 +1,9 @@
 from PIL import Image, ImageDraw
 import custom_logger
 import randomness
+import math
 import sys
+import re
 
 logging = custom_logger.setup_logging("_latest_to_image.log")
 
@@ -31,9 +33,11 @@ MACROS = {
     "BSR":"3E",
 }
 
+
 print("Usage:\nargv[1] = input code plaintext\nargv[2] = ouptput png path")
 
 code = open(sys.argv[1], "r").read().splitlines()
+string_mapping = {}
 newcode = []
 for c in code:
     lines = c.split(";")
@@ -65,7 +69,7 @@ x, y = 0, 0
 rel_x, rel_y = 0, 0
 label_coords = {}
 for line in code:
-    l = line.split("#")[0]
+    l:str = line.split("#")[0]
     l = l.strip()
     if l == "":
         continue
@@ -129,9 +133,19 @@ for line in code:
         logging.debug(f"Ended relative mode, put pointer to {hex(x)}, {hex(y)}")
         continue
 
-    elif l.split("|")[0] in "FILL IMPORT PATCH INIT_RANDOM INIT_GRADIENT".split(" "):
+    elif l.split("|")[0] in "FILL IMPORT PATCH INIT_RANDOM INIT_GRADIENT MAPSTRING UNMAP".split(" "):
         # commands that don't advance writer, but that we don't do anything with rn
         continue
+
+    elif l.startswith("\""):
+        # handle strings
+        m = re.search(r'"(.*?)"', l)
+        contents = m.group(1).strip("\"")
+        pixel_length = -(len(contents) // -3)
+        y += pixel_length
+        y %= 256
+        x += pixel_length // 256
+        continue # we've already advanced to where we want to be
 
     y += 1
     y %= 256
@@ -270,6 +284,80 @@ for line in code:
         y += rel_y
         rel_x, rel_y = 0, 0
         logging.debug(f"Ended relative mode")
+
+    elif l.startswith("MAPSTRING"):
+        # deal with range, cause it could either be a single value or a range
+        s_range = l.split("|")[1]
+        m_range = l.split("|")[2]
+        if "-" in s_range:
+            range_start = get_value(s_range.split("-")[0])
+            range_end = get_value(s_range.split("-")[1])
+            # mapping also has to have a - in it, and should be 3 characters long.
+            # first is start, second is dash, third is end.
+            # the quotes are ignored. so we're looking for [1] and [3]
+            map_start, map_end = ord(m_range[1]), ord(m_range[3])+1
+            if map_end - map_start != range_end - range_start:
+                logging.error(f"Compilation error: String mapping range from {range_start} to {range_end} doesn't match character mapping length from {map_start} to {map_end}")
+                quit()
+            
+            for i in range(range_end - range_start):
+                if string_mapping.get(chr(map_start + i)) is not None:
+                    logging.error(f"Compilation error: Character in mapping range from {map_start} to {map_end} is already mapped.")
+                    quit()
+                if range_start + i in list(string_mapping.values()):
+                    logging.error(f"Compilation error: Value in mapping range from {range_start} to {range_end} is already mapped.")
+                    quit()
+                string_mapping[chr(map_start + i)] = range_start + i
+            logging.info(f"Defined new string mapping range from {range_start} to {range_end} mapping to {map_start} to {map_end}")
+        else:
+            value = get_value(s_range)
+            target = m_range[1]
+            if string_mapping.get(target) is not None:
+                logging.error(f"Compilation error: Character {target} has already been mapped.")
+                quit()
+            if value in list(string_mapping.values()):
+                logging.error(f"Compilation error: Value {value} has already been mapped.")
+                quit()
+            string_mapping[target] = value
+            logging.info(f"Defined new string mapping for single character at {value} mapping to {target}")
+
+    elif l.startswith("UNMAP"):
+        s_range = l.split("|")[1]
+        if "-" in s_range:
+            range_start = get_value(s_range.split("-")[0])
+            range_end = get_value(s_range.split("-")[1])
+            contents = list(range(range_start, range_end+1))
+            unmap = []
+            warned = False
+            for k in string_mapping.keys():
+                if string_mapping[k] in contents:
+                    unmap.append(k)
+                elif not warned:
+                    warned = True
+                    logging.warning("The unmap command attempts to unmap unmapped characters.")
+            for u in unmap:
+                string_mapping.pop(u)
+            logging.info(f"Unmapped strings from range {range_start} to {range_end}")
+    
+    if l.startswith("\""):
+        m = re.search(r'"(.*?)"', l)
+        contents = m.group(1).strip("\"")
+        for c in range(0, len(contents), 3):
+            try:
+                c1 = string_mapping[contents[c]] if c < len(contents) else 0
+                c2 = string_mapping[contents[c+1]] if c+1 < len(contents) else 0
+                c3 = string_mapping[contents[c+2]] if c+2 < len(contents) else 0
+                color = (c1, c2, c3)
+                img.putpixel((x, y), color)
+                logging.debug(f"Wrote singular color from string at {x}, {y}: ({color})")
+                y += 1
+                y %= 256
+                if y == 0:
+                    x += 1
+                    x %= 256
+            except KeyError:
+                logging.error(f"Compilation error: String '{contents}' uses character with no defined mapping.")
+                quit() 
 
     if len(l.split(" ")) == 3: # no label on this line
         color = tuple([get_value(v) for v in l.split(" ")])
