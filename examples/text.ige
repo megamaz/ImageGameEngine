@@ -38,13 +38,11 @@ IMPORT|07 A0|font.png
 FILL|00 A0|06 A6|FF FF FF
 
 # write out our text
-# "Hello World"
-# FF is a string terminator
 TO|FF 00
-08 05 0C
-0C 0F 00
-17 0F 12
-0C 04 FF
+MAPSTRING|$01-$27|'a-z'
+MAPSTRING|$00|' '
+MAPSTRING|FF|'.' # string terminator
+"hello world."
 
 # render loop
 # I'll keep 51 51 and below for variables
