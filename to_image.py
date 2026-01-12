@@ -350,6 +350,7 @@ for line in code:
                 color = (c1, c2, c3)
                 img.putpixel((x, y), color)
                 logging.debug(f"Wrote singular color from string at {x}, {y}: ({color})")
+                pixels_used += 1
                 y += 1
                 y %= 256
                 if y == 0:
