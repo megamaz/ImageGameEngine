@@ -334,7 +334,7 @@ for line in code:
                     unmap.append(k)
                 elif not warned:
                     warned = True
-                    logging.warning("The unmap command attempts to unmap unmapped characters.")
+                    logging.warning("The unmap command attempts to unmap one or more characters with no mapping.")
             for u in unmap:
                 string_mapping.pop(u)
             logging.info(f"Unmapped strings from range {range_start} to {range_end}")
