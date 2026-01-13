@@ -308,7 +308,7 @@ for line in code:
                     logging.error(f"Compilation error: Value in mapping range from {range_start} to {range_end} is already mapped.")
                     quit()
                 string_mapping[chr(map_start + i)] = range_start + i
-            logging.info(f"Defined new string mapping range from {range_start} to {range_end} mapping to {map_start} to {map_end}")
+            logging.debug(f"Defined new string mapping range from {range_start} to {range_end} mapping to {map_start} to {map_end}")
         else:
             value = get_value(s_range)
             target = m_range[1]
@@ -319,7 +319,7 @@ for line in code:
                 logging.error(f"Compilation error: Value {value} has already been mapped.")
                 quit()
             string_mapping[target] = value
-            logging.info(f"Defined new string mapping for single character at {value} mapping to {target}")
+            logging.debug(f"Defined new string mapping for single character at {value} mapping to {target}")
 
     elif l.startswith("UNMAP"):
         s_range = l.split("|")[1]
@@ -337,7 +337,7 @@ for line in code:
                     logging.warning("The unmap command attempts to unmap one or more characters with no mapping.")
             for u in unmap:
                 string_mapping.pop(u)
-            logging.info(f"Unmapped strings from range {range_start} to {range_end}")
+            logging.debug(f"Unmapped strings from range {range_start} to {range_end}")
     
     if l.startswith("\""):
         m = re.search(r'"(.*?)"', l)
